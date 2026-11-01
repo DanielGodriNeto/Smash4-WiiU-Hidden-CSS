@@ -3,11 +3,17 @@
 The project is an experimental US v304 Smash Wii U CSS investigation. It is
 not a stable release and does not redistribute game content.
 
+## Language
+
+All contributions, including code comments, variables, commit messages, and
+documentation, must be written in English.
+
 ## Before changing code
 
 Read:
 
 - [README](README.md) for the current release status and supported workflow.
+- [AGENTS](AGENTS.md) for AI-agent requirements.
 - [Validation record](docs/VALIDATION.md) for known failures and required tests.
 - [Native findings](docs/NATIVE-FINDINGS.md) before changing fighter mappings or
   lifecycle assumptions.

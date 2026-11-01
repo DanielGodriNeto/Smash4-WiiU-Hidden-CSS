@@ -50,6 +50,61 @@ The [experimental Giga Bowser respawn companion](docs/RESPAWN-COMPANION.md) is a
 
 Public distribution is restricted to source, synthetic tests and documentation. The explicit allowlist and privacy scanner in `tools/package_source.py` exclude dumps, game scripts, decrypted executables, tool downloads, local paths and generated Nintendo assets. No game-data ZIP belongs in this repository.
 
+## Architecture and safe workflow
+
+The repository is intentionally source-only. The main data flow is:
+
+```text
+owned US v304 base/update dump
+        |
+        v
+prepare_native_candidate.py
+        |
+        v
+private manifest and inputs
+        |
+        v
+Sm4shExplorer 0.07.4 export
+        |
+        v
+verify_official_candidate.py
+        |
+        v
+package_official_candidate.py
+        |
+        v
+private SDCafiine candidate
+```
+
+`tools/smash4.py` contains lossless resource and table helpers. The
+`verify_*.py` tools and `tests/` enforce mapping, path, archive, and privacy
+invariants. `companion/main.c` is a separate guarded experiment and is never
+required for the CSS pack.
+
+Keep all dumps, decrypted executables, Sm4shExplorer workspaces, generated
+candidate ZIPs, and runtime logs outside the repository. The public package is
+created by an explicit allowlist, not by archiving the workspace.
+
+## Optional companion installation
+
+The CSS pack works without the companion. If testing the experimental Giga
+Bowser respawn fix, install the `.wps` plugin under the Aroma environment's
+`plugins` directory and its required `.wms` module under the corresponding
+`modules` directory, following the dependency's official installation
+instructions. The companion requires FunctionPatcherModule and WUMSLoader.
+It is US-v304-specific, optional, and not hardware-validated.
+
+## Documentation map
+
+- [AGENTS.md](AGENTS.md): AI-agent workflow requirements.
+- [CONTRIBUTING.md](CONTRIBUTING.md): build, test, and review workflow.
+- [SECURITY.md](SECURITY.md): privacy and source-only distribution rules.
+- [docs/MAINTAINER-GUIDE.md](docs/MAINTAINER-GUIDE.md): architecture and
+  handoff details.
+- [docs/VALIDATION.md](docs/VALIDATION.md): runtime evidence and failures.
+- [docs/NATIVE-FINDINGS.md](docs/NATIVE-FINDINGS.md): mapping evidence and
+  invariants.
+
 ## Maintainer and contributor handoff
 
 The [maintainer guide](docs/MAINTAINER-GUIDE.md) records the data flow,
