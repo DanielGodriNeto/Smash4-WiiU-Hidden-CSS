@@ -13,7 +13,8 @@ REQUIRED = (
     'US_TITLE_ID UINT64_C(0x0005000010144F00)',
     'ENTRY_INIT_ADDRESS 0x02E45558u',
     'GIGA_ASSIGNMENT_ADDRESS 0x02E45708u',
-    'entry != NULL', '*kind == 58u', '*alternate == 15u', '*alternate = 58u',
+    'entry != NULL', '#include "form_restore.h"', 'form_restore_alternate(*kind, current)',
+    '*alternate = restored;',
     'module.textSize', 'code_matches()', '304, 304',
 )
 PRIVATE = (r'[A-Za-z]:[\\/]+Users[\\/]', r'gh[pousr]_[A-Za-z0-9]{20,}',
