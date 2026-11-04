@@ -1,6 +1,6 @@
 # Experimental hidden-form respawn companion
 
-`companion/main.c` is a separate Aroma WUPS plugin, not an SDCafiine file replacement. It targets only the US title `0005000010144F00`, update v304. After the original initializer runs, it reads the entry's kind (entry+0x10) and alternate (entry+0x14). If the pair matches the table below, it writes the hidden form ID back into the alternate. The pure rule is in `companion/form_restore.h`, which has no WUPS dependency and is tested on a host compiler.
+`companion/main.c` is a separate Aroma WUPS plugin, not an SDCafiine file replacement. It targets only the US title `0005000010144F00`. Update v304 is enforced by the FunctionPatcher version arguments (304, 304) and the code signatures, not by the title ID. After the original initializer runs, it reads the entry's kind (entry+0x10) and alternate (entry+0x14). If the pair matches the table below and the form is enabled (only 58 today), it writes the hidden form ID back into the alternate. The pure rules are in `companion/form_restore.h` (pair table) and `companion/guard.h` (gates and the write decision `guard_restored_alternate`), which have no WUPS dependency and are tested on a host compiler.
 
 | Form (kind) | Base written by native code (alternate) | Name |
 |---:|---:|---|
@@ -9,17 +9,29 @@
 | 60 | 41 | Giga Mac |
 | 61 | 30 | Mega Lucario |
 
-**Fail-closed rule:** the alternate is changed only when kind is one of these four forms AND alternate equals that form's base. Every other input returns the alternate unchanged.
+**Fail-closed rule:** the alternate is changed only when kind is an enabled form (currently only 58) AND alternate equals that form's base. Every other input returns the alternate unchanged.
 
-It has guardrails: title/version selection, `cross_f.rpx` text bounds, and the exact four-word US v304 signatures at both the initializer and the Giga Bowser assignment site. It remains inactive if any guard fails.
+It has guardrails: the US title ID (base title only), `cross_f.rpx` text bounds, the exact four-word US v304 signatures at both the initializer and the Giga Bowser assignment site, an entry-pointer validator, and an enabled-forms mask. It remains inactive if any guard fails.
+
+## Gates and enable state
+
+Only form 58 (Giga Bowser) is enabled at runtime. `GUARD_ENABLED_FORMS_MASK` in `companion/guard.h` sets bit 58 and nothing else. Forms 59, 60 and 61 stay in `companion/form_restore.h` and in the table above, but the hook skips them. Their assignment sites have no verified signature, so nothing can check them. To enable one, add its verified words and a separate check in `companion/main.c`, set its mask bit, and update this document.
+
+Entry validation: `guard_entry_ptr_ok` rejects a NULL, misaligned or out-of-range entry. The hook reads entry+0x10 and entry+0x14, so the whole 0x18-byte window must lie inside the reported range.
+
+ASSUMPTION, not verified on hardware: the fighter entry lies inside the range returned by `OSGetMapVirtAddrRange()`. wut documents that call only as the range available for mapping. If the entry lies outside it, the validator rejects it and the hook never writes. The alternative `OSGetMemBound(OS_MEM2)` was not used.
+
+Enable is all or nothing. `guard_enable` checks the title, module, bounds, signatures and range before touching FunctionPatcher. It then initializes the library and adds one patch, and it requires `applied` to be true and the handle to be non-zero. Any failure rolls back by removing the patch with `FunctionPatcher_RemoveFunctionPatch` and deinitializing the library. If removal fails, the handle is kept, the hook stays disabled, and the next enable reports `GUARD_STUCK`. `guard_disable` runs on application start, application end and plugin deinit. The removal semantics come from the FunctionPatcher header and are not verified at runtime. The teardown race is also unverified.
+
+Lifecycle is UNTESTED on hardware and in Cemu. Forms 59, 60 and 61 are disabled at runtime by design.
 
 ## Evidence
 
 Only Giga Bowser (58 -> 15) was tested, and only through the equivalent one-instruction Cemu engine probe: changing the native alternate assignment from Bowser to Giga Bowser kept Giga Bowser after a KO. The 59, 60 and 61 pairs come from the native helper mapping in `docs/NATIVE-FINDINGS.md`; they have no runtime evidence.
 
-**KNOWN GAP:** the guard signatures for forms 59, 60 and 61 are unknown. The code guards only the initializer and the Giga Bowser (58) assignment site. For the other three forms, the safety net is the exact kind+alternate pair match plus `code_matches()`. The native assignment sites for those forms were not located, so the hook may never fire for them. Closing this gap needs the assignment-site words from the user's own binary.
+**KNOWN GAP:** the guard signatures for forms 59, 60 and 61 are unknown. The code guards only the initializer and the Giga Bowser (58) assignment site. For the other three forms the mask keeps the hook from writing at all, so the pair match and `code_matches()` never run for them. The native assignment sites for those forms were not located, so enabling them is not yet possible. Closing this gap needs the assignment-site words from the user's own binary.
 
-The hook runs on any initializer call that matches a pair, not only on KO. It may therefore also affect other transitions, such as Final Smash handling. Regression testing on the base roster is required before any wider claim.
+The hook runs on any initializer call that matches an enabled pair, not only on KO. It may therefore also affect other transitions, such as Final Smash handling. Regression testing on the base roster is required before any wider claim.
 
 It is **not hardware validated**. It does not fix results, entry animation, portraits/nameplates, enemy-Mii forms, or the known results softlock and T-pose issues. See `docs/VALIDATION.md` for the per-form lifecycle matrix (all untested).
 

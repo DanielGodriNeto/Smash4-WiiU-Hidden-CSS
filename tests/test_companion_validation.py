@@ -68,8 +68,7 @@ class FormRestoreTableTests(unittest.TestCase):
 
     def test_companion_main_uses_helper_without_hardcoded_pair(self):
         text = MAIN.read_text(encoding='utf-8')
-        self.assertIn('#include "form_restore.h"', text)
-        self.assertIsNotNone(re.search(r'form_restore_alternate\(\s*\*kind\s*,', text))
+        self.assertIsNotNone(re.search(r'guard_restored_alternate\(\s*kind_value\s*,', text))
         for line in OLD_HARDCODED_LINES:
             self.assertNotIn(line, text)
         self.assertIsNone(re.search(r'\b(58|15)u\b', text))
