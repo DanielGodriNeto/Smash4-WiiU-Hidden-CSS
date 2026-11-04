@@ -8,9 +8,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include "form_restore.h"
 
 WUPS_PLUGIN_NAME("Hidden CSS Giga Respawn (experimental)");
-WUPS_PLUGIN_DESCRIPTION("US v304 only: preserve directly selected Giga Bowser after KO");
+WUPS_PLUGIN_DESCRIPTION("US v304 only, experimental: restore hidden forms 58-61 after entry init (KO only seen for Giga Bowser)");
 WUPS_PLUGIN_VERSION("0.1.0-experimental");
 WUPS_PLUGIN_AUTHOR("CSS Expansion Contributors");
 WUPS_PLUGIN_LICENSE("MIT");
@@ -31,8 +32,10 @@ static uint32_t my_initialize_entry(void *entry) {
     if (hook_enabled && entry != NULL) {
         volatile uint32_t *kind = (volatile uint32_t *)((uint8_t *)entry + 0x10);
         volatile uint32_t *alternate = (volatile uint32_t *)((uint8_t *)entry + 0x14);
-        if (*kind == 58u && *alternate == 15u) {
-            *alternate = 58u;
+        uint32_t current = *alternate;
+        uint32_t restored = form_restore_alternate(*kind, current);
+        if (restored != current) {
+            *alternate = restored;
         }
     }
     return result;
@@ -103,7 +106,7 @@ ON_APPLICATION_START() {
         return;
     }
     hook_enabled = true;
-    OSReport("[HiddenCSS] Experimental Giga respawn hook active for US v304.\n");
+    OSReport("[HiddenCSS] Experimental hidden-form respawn hook active for US v304.\n");
 }
 
 ON_APPLICATION_ENDS() { stop_hook(); }

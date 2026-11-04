@@ -2,7 +2,7 @@
 
 Work in progress. **A complete stable mod has not been achieved.** Original seven-v2 fails to boot on Aroma; probe04 and candidate06 fail while entering CSS. Do not install those builds.
 
-Candidate07 uses official Sm4shExplorer 0.07.4 packing, seven existing rows and executable-verified cosmetic names. It corrects candidate06's partial language packs: shared portraits are imported once into data, while genuinely localized UI stays in its native partition. The user confirmed CSS loading and Giga Bowser Training in Cemu. An experimental, separately built Giga-only Aroma companion now addresses the observed KO conversion in the equivalent Cemu engine probe; it is not hardware validated. Results, UI rendering, other fighters and console behavior still require investigation.
+Candidate07 uses official Sm4shExplorer 0.07.4 packing, seven existing rows and executable-verified cosmetic names. It corrects candidate06's partial language packs: shared portraits are imported once into data, while genuinely localized UI stays in its native partition. The user confirmed CSS loading and Giga Bowser Training in Cemu. An experimental, separately built Aroma companion now covers four hidden forms (Giga Bowser, Wario-Man, Giga Mac, Mega Lucario) after the entry initializer runs, which is the step a KO respawn goes through. Only the Giga Bowser case has evidence, from the equivalent Cemu engine probe; the other three are unverified and the whole companion is not hardware validated. Results, UI rendering, other fighters and console behavior still require investigation.
 
 ## Candidate roster
 
@@ -46,7 +46,7 @@ The private candidate ZIP contains this directory tree. Use one pack at a time; 
 
 See [native findings](docs/NATIVE-FINDINGS.md), [failed UI audit](docs/UI-FAILURE-AUDIT.md), [test record](docs/VALIDATION.md) and [sources](docs/SOURCES.md). Offline checks compare imported bytes and affected archive members; they do not establish console stability.
 
-The [experimental Giga Bowser respawn companion](docs/RESPAWN-COMPANION.md) is a separately built WUPS plugin with narrow US-v304 code signatures. It is not bundled with the SDCafiine candidate and has no console validation.
+The [experimental hidden-form respawn companion](docs/RESPAWN-COMPANION.md) is a separately built WUPS plugin with narrow US-v304 code signatures. It restores four forms through an exact pair table; guard signatures exist only for Giga Bowser. It is not bundled with the SDCafiine candidate and has no console validation.
 
 Public distribution is restricted to source, synthetic tests and documentation. The explicit allowlist and privacy scanner in `tools/package_source.py` exclude dumps, game scripts, decrypted executables, tool downloads, local paths and generated Nintendo assets. No game-data ZIP belongs in this repository.
 
@@ -87,8 +87,8 @@ created by an explicit allowlist, not by archiving the workspace.
 
 ## Optional companion installation
 
-The CSS pack works without the companion. If testing the experimental Giga
-Bowser respawn fix, install the `.wps` plugin under the Aroma environment's
+The CSS pack works without the companion. If testing the experimental hidden-form
+respawn fix (Giga Bowser, Wario-Man, Giga Mac, Mega Lucario), install the `.wps` plugin under the Aroma environment's
 `plugins` directory and its required `.wms` module under the corresponding
 `modules` directory, following the dependency's official installation
 instructions. The companion requires FunctionPatcherModule and WUMSLoader.

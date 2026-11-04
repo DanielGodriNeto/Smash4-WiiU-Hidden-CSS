@@ -10,7 +10,34 @@ The original four/seven profiles have not passed runtime validation; seven-v2 pr
 - 05 SinglePortrait: built, awaiting console testing. Temporarily reassigns normal Bowser's existing CSS portrait record to Giga Bowser. No new records, external flags, name blocks, nameplates or aliases. Normal Bowser may have a blank icon during this diagnostic. All packed files and patchlist remain identical to test03. Respawn/results are unchanged.
 - 06 HiddenSeven candidate: boots, but the user confirmed a CSS-loading crash in Cemu. The earlier byte-content verifier passed 316 imports and 11,308 unchanged members but missed unsafe pack localization. This build is now rejected by the current validator and must not be installed.
 - 07 HiddenSeven SharedUI: the user confirmed CSS loading and Giga Bowser Training in Cemu. A KO still restores Bowser. It removes 190 redundant UI language imports. Validation confirms 126 physical imports, 190 inherited shared references, 11,308 unchanged members and 925 patchlist records. Hardware behavior, results, other fighters and cosmetic rendering remain unverified.
-- Giga respawn investigation: an equivalent Cemu one-instruction engine probe changed the US-v304 Giga Bowser alternate assignment from Bowser (15) to Giga Bowser (58). The user confirmed Giga Bowser remained Giga after KO. The separately built WUPS companion reproduces that narrow post-initializer change with title, version, module-bound and instruction-signature guards. It has not run on hardware.
+- Giga respawn investigation: an equivalent Cemu one-instruction engine probe changed the US-v304 Giga Bowser alternate assignment from Bowser (15) to Giga Bowser (58). The user confirmed Giga Bowser remained Giga after KO. The separately built WUPS companion is intended to reproduce that narrow post-initializer change with title, version, module-bound and instruction-signature guards. Its PowerPC build and Aroma load have not been run, and it has not run on hardware.
+- Companion scope (host-only evidence): the companion now restores four hidden forms (58->15, 59->22, 60->41, 61->30) through `companion/form_restore.h`. Only the Giga Bowser pair has any runtime evidence, and that evidence comes from the Cemu probe above. Forms 59, 60 and 61 have no assignment-site guards and no runtime evidence.
+
+## Hidden-form respawn companion lifecycle matrix
+
+Every cell is **UNTESTED on hardware and in Cemu**. Host tests check only the pure pair rule.
+
+| Lifecycle path | 58 Giga Bowser | 59 Wario-Man | 60 Giga Mac | 61 Mega Lucario |
+|---|---|---|---|---|
+| Match entry (initializer runs) | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Respawn after KO | UNTESTED (Cemu probe: kept Giga after KO) | UNTESTED | UNTESTED | UNTESTED |
+| Final stock loss | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Sudden Death | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Timeout | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Rematch | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Return to CSS | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Assignment-site guard | present (signature at 0x02E45708) | MISSING | MISSING | MISSING |
+
+Known runtime failures from the table above still apply: results softlock and T-pose after a win, and freezes on win for forms.
+
+## Host tests run for the companion pair rule
+
+- `python -m unittest discover -s tests -v` on the Windows host (gcc from Strawberry Perl): 29 tests, all OK, including the four C harness tests C1-C4 compiled with `-std=gnu11 -Wall -Wextra -Werror`.
+- The same suite inside the `devkitpro/devkitppc` Docker image (Debian gcc 12.2): 29 tests, all OK, no skips.
+- Mutation checks on copies outside the repo: a table entry changed from 60->41 to 60->40 fails C1, C2 and C3; an unconditional `return kind` fails C2 and C3.
+- `powerpc-eabi-gcc -fsyntax-only -Wall -Wextra` on `companion/main.c` with stub WUPS and FunctionPatcher headers: exit 0. The stubs are declarations only, so this is not a real WUPS SDK build.
+
+Not run: the real PowerPC plugin build (`tools/build_companion.ps1` needs the WUPS and FunctionPatcher SDKs), loading under Aroma, and any Cemu or hardware run.
 
 Local Cemu 2.6 boot reaches the album-data prompt with both a stock US v304 merged dump and candidate06. The user confirmed physical J advanced the stock prompt. Automated input did not establish reliable gameplay control; this is not evidence of a mod gameplay pass. The private test GamePad profile was corrected after finding that Pro Controller direction enum values had been used. Its intended controls are J=A, K=B, U=X/jump, I=Y, P=Start and arrows=left stick. No settings in the user's separate Cemu installation were changed.
 

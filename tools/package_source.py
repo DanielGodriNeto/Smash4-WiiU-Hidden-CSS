@@ -17,7 +17,7 @@ PUBLIC_FILES=[
     'tools/prepare_native_candidate.py','tools/export_with_sm4shexplorer.ps1','docs/NATIVE-FINDINGS.md',
     'tools/verify_official_candidate.py','tools/package_official_candidate.py',
     'tests/test_official_validation.py',
-    'companion/main.c','docs/RESPAWN-COMPANION.md',
+    'companion/main.c','companion/form_restore.h','docs/RESPAWN-COMPANION.md',
     'tools/build_companion.ps1','tools/verify_companion.py',
     'tests/test_companion_validation.py',
 ]

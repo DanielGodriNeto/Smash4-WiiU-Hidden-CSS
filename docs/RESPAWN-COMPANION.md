@@ -1,10 +1,27 @@
-# Experimental Giga Bowser respawn companion
+# Experimental hidden-form respawn companion
 
-`companion/main.c` is a separate Aroma WUPS plugin, not an SDCafiine file replacement. It targets only the US title `0005000010144F00`, update v304, and only the engine path that assigns ordinary Bowser (15) as the alternate form for Giga Bowser (58). After the original initializer runs, it changes that alternate back to 58.
+`companion/main.c` is a separate Aroma WUPS plugin, not an SDCafiine file replacement. It targets only the US title `0005000010144F00`, update v304. After the original initializer runs, it reads the entry's kind (entry+0x10) and alternate (entry+0x14). If the pair matches the table below, it writes the hidden form ID back into the alternate. The pure rule is in `companion/form_restore.h`, which has no WUPS dependency and is tested on a host compiler.
 
-It has guardrails: title/version selection, `cross_f.rpx` text bounds, and the exact four-word US v304 signatures at both the initializer and the assignment site. It remains inactive if any guard fails.
+| Form (kind) | Base written by native code (alternate) | Name |
+|---:|---:|---|
+| 58 | 15 | Giga Bowser |
+| 59 | 22 | Wario-Man |
+| 60 | 41 | Giga Mac |
+| 61 | 30 | Mega Lucario |
 
-This was validated only by the equivalent one-instruction Cemu investigation: changing the native alternate assignment from Bowser to Giga Bowser kept Giga Bowser after a KO. It is **not hardware validated**. It does not fix results, entry animation, portraits/nameplates, Wario-Man, Giga Mac, Mega Lucario, or the enemy-Mii forms.
+**Fail-closed rule:** the alternate is changed only when kind is one of these four forms AND alternate equals that form's base. Every other input returns the alternate unchanged.
+
+It has guardrails: title/version selection, `cross_f.rpx` text bounds, and the exact four-word US v304 signatures at both the initializer and the Giga Bowser assignment site. It remains inactive if any guard fails.
+
+## Evidence
+
+Only Giga Bowser (58 -> 15) was tested, and only through the equivalent one-instruction Cemu engine probe: changing the native alternate assignment from Bowser to Giga Bowser kept Giga Bowser after a KO. The 59, 60 and 61 pairs come from the native helper mapping in `docs/NATIVE-FINDINGS.md`; they have no runtime evidence.
+
+**KNOWN GAP:** the guard signatures for forms 59, 60 and 61 are unknown. The code guards only the initializer and the Giga Bowser (58) assignment site. For the other three forms, the safety net is the exact kind+alternate pair match plus `code_matches()`. The native assignment sites for those forms were not located, so the hook may never fire for them. Closing this gap needs the assignment-site words from the user's own binary.
+
+The hook runs on any initializer call that matches a pair, not only on KO. It may therefore also affect other transitions, such as Final Smash handling. Regression testing on the base roster is required before any wider claim.
+
+It is **not hardware validated**. It does not fix results, entry animation, portraits/nameplates, enemy-Mii forms, or the known results softlock and T-pose issues. See `docs/VALIDATION.md` for the per-form lifecycle matrix (all untested).
 
 ## Build and use
 
