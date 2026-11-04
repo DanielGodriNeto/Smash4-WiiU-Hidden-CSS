@@ -8,7 +8,7 @@ import struct
 import zlib
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from smash4 import Dump, Params, owns_pack
+from smash4 import Dump, Params, check_case_collisions, check_span, owns_pack
 from build import FIGHTERS, edit_database
 
 
@@ -51,11 +51,28 @@ def cosmetic_map(sections):
 
 
 def texture_id(raw):
-    if raw[:4]!=b'NTWU' or struct.unpack_from('>H',raw,6)[0]!=1:
+    if len(raw)<16 or raw[:4]!=b'NTWU' or struct.unpack_from('>H',raw,6)[0]!=1:
         raise ValueError('Expected a single-texture Wii U NUT')
     at=raw.find(b'GIDX',16,256)
-    if at<0 or struct.unpack_from('>I',raw,at+4)[0]!=16:raise ValueError('Unexpected NUT GIDX layout')
+    if at<0 or at+12>len(raw) or struct.unpack_from('>I',raw,at+4)[0]!=16:raise ValueError('Unexpected NUT GIDX layout')
     return at+8,struct.unpack_from('>I',raw,at+8)[0]
+
+
+def native_head(pack,offset,length):
+    """Return the first 256 bytes of a packed NUT entry; reject spans outside the pack."""
+    check_span(len(pack),offset,length)
+    blob=pack[offset:offset+length]
+    if blob[:2] in (b'\x78\x9c',b'\x78\xda',b'\x78\x01'):
+        return zlib.decompressobj().decompress(blob,256)
+    return blob[:256]
+
+
+def allocate_texture_id(candidate,occupied):
+    """Return the first free 32-bit texture ID at or after candidate."""
+    while candidate in occupied:
+        candidate+=1
+    if candidate>0xffffffff:raise ValueError('Texture ID space exhausted')
+    return candidate
 
 
 def main():
@@ -105,10 +122,7 @@ def main():
             parent=directories[parent_path]
             physical=part if e.flags&0x800 else 'data'
             pack=dump.pack(physical,parent)
-            blob=pack[e.offset:e.offset+e.compressed]
-            if blob[:2] in (b'\x78\x9c',b'\x78\xda',b'\x78\x01'):
-                head=zlib.decompressobj().decompress(blob,256)
-            else:head=blob[:256]
+            head=native_head(pack,e.offset,e.compressed)
             if head[:4]!=b'NTWU':continue
             if struct.unpack_from('>H',head,6)[0]!=1:
                 raise ValueError('Cannot certify unique IDs without a multi-texture parser')
@@ -121,6 +135,7 @@ def main():
     report['shared_ui_aliases_skipped']=0
     for part,resource in dump.resources.items():
         directories={e.path:e for e in resource.entries if e.directory}
+        native_names={e.path for e in resource.entries}
         original,_,_=dump.read(part,'param/ui/ui_character_db.bin')
         params=Params(original)
         for index,cosmetic in [(62,203),(63,204)]:
@@ -152,14 +167,14 @@ def main():
                     continue
                 raw,_,_=dump.read(part,donor)
                 at,old_id=texture_id(raw)
-                while identifier in occupied:identifier+=1
-                new_id=identifier
+                new_id=allocate_texture_id(identifier,occupied)
                 occupied.add(new_id)
-                identifier+=1
+                identifier=new_id+1
                 data=bytearray(raw)
                 struct.pack_into('>I',data,at,new_id)
                 if data[:at]!=raw[:at] or data[at+4:]!=raw[at+4:]:raise ValueError('Texture pixels/header layout changed')
                 target=donor.replace('_'+f['base']+'_01.nut','_'+native_name+'_01.nut')
+                check_case_collisions(native_names,[target])
                 key=(part+'/'+target).casefold()
                 if key in seen:raise ValueError('Case-insensitive output collision')
                 seen.add(key)

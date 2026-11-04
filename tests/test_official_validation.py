@@ -50,5 +50,43 @@ class OfficialValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'length mismatch'):
             decode(b'123',4)
 
+    def test_texture_id_reads_single_texture_header(self):
+        from prepare_native_candidate import texture_id
+        self.assertEqual(texture_id(nut_header()),(24,0x28fe0005))
+
+    def test_texture_id_rejects_malformed_headers(self):
+        from prepare_native_candidate import texture_id
+        cases={
+            'magic':nut_header(magic=b'NUTX'),
+            'texture count':nut_header(count=2),
+            'gidx length':nut_header(gidx_len=12),
+            'truncated gidx':nut_header()[:20],
+            'tiny':b'NTWU',
+        }
+        for name,raw in cases.items():
+            with self.subTest(name=name),self.assertRaises(ValueError):
+                texture_id(raw)
+
+    def test_native_head_rejects_span_past_packed_file(self):
+        from prepare_native_candidate import native_head
+        with self.assertRaisesRegex(ValueError,'span'):
+            native_head(bytes(100),90,20)
+
+    def test_allocate_texture_id_skips_occupied_and_rejects_overflow(self):
+        from prepare_native_candidate import allocate_texture_id
+        self.assertEqual(allocate_texture_id(5,{5,6}),7)
+        self.assertEqual(allocate_texture_id(0xfffffffe,set()),0xfffffffe)
+        with self.assertRaisesRegex(ValueError,'exhausted'):
+            allocate_texture_id(0xffffffff,{0xffffffff})
+
+
+def nut_header(count=1,gidx_len=16,identifier=0x28fe0005,magic=b'NTWU',size=64):
+    raw=bytearray(size)
+    raw[:4]=magic
+    struct.pack_into('>H',raw,6,count)
+    raw[16:20]=b'GIDX'
+    struct.pack_into('>II',raw,20,gidx_len,identifier)
+    return bytes(raw)
+
 
 if __name__=='__main__':unittest.main()
