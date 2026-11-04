@@ -1,6 +1,7 @@
 """Synthetic fixtures only: no Nintendo binary data is stored in tests."""
 import struct
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -128,6 +129,93 @@ class BuilderTests(unittest.TestCase):
         p.set(p.groups[0][0][0],0x01020304)
         pos=p.groups[0][0][0][0]
         self.assertEqual(p.data[pos+1:pos+5],b'\1\2\3\4')
+
+    def test_dlc_row_overlapping_new_slot_rejected(self):
+        p=Params(fixture())
+        p.set(p.groups[0][80][10],1)
+        p.set(p.groups[0][80][13],59)
+        with self.assertRaisesRegex(ValueError,'overlaps'):
+            edit_database(bytes(p.data),FIGHTERS)
+
+    def test_dlc_row_outside_new_slots_accepted(self):
+        p=Params(fixture())
+        p.set(p.groups[0][80][10],1)
+        p.set(p.groups[0][80][13],200)
+        _,report=edit_database(bytes(p.data),FIGHTERS)
+        self.assertEqual([r['css_position'] for r in report],list(range(59,66)))
+
+    def test_replaced_row_old_position_is_not_taken(self):
+        p=Params(fixture())
+        p.set(p.groups[0][60][13],59)
+        _,report=edit_database(bytes(p.data),FIGHTERS)
+        self.assertEqual(report[0]['css_position'],59)
+
+    def test_position_beyond_unsigned_byte_field_rejected(self):
+        p=Params(fixture())
+        p.set(p.groups[0][58][13],255)
+        with self.assertRaisesRegex(ValueError,'8-bit'):
+            edit_database(bytes(p.data),FIGHTERS)
+
+    def test_slot_position_helper_rejects_taken_and_repeated_values(self):
+        from build import check_slot_positions
+        check_slot_positions([59,60],{1,2,58})
+        with self.assertRaisesRegex(ValueError,'overlaps'):
+            check_slot_positions([59,60],{60})
+        with self.assertRaisesRegex(ValueError,'Duplicate'):
+            check_slot_positions([59,59],set())
+
+    def test_case_collision_helper(self):
+        from smash4 import check_case_collisions
+        check_case_collisions(['root/alpha.bin'],['root/beta.bin'])
+        check_case_collisions(['root/alpha.bin'],['root/alpha.bin'])
+        with self.assertRaisesRegex(ValueError,'Case-insensitive'):
+            check_case_collisions(['root/alpha.bin'],['root/ALPHA.bin'])
+        with self.assertRaisesRegex(ValueError,'Case-insensitive'):
+            check_case_collisions([],['root/a.bin','root/A.bin'])
+
+    def test_archive_add_rejects_case_only_aliases(self):
+        from build import ArchiveEdits
+        edits=ArchiveEdits(FakeDump(Resource(rf_fixture()),bytes(512)),'data',None)
+        with self.assertRaisesRegex(ValueError,'Case-insensitive'):
+            edits.add('root/ALPHA.bin',b'x')
+        edits.add('root/beta.bin',b'b'*20)
+        with self.assertRaisesRegex(ValueError,'Case-insensitive'):
+            edits.add('root/Beta.bin',b'c')
+        edits.add('root/alpha.bin',b'a'*4)
+
+    def test_archive_finish_accepts_valid_spans(self):
+        from build import ArchiveEdits
+        with tempfile.TemporaryDirectory() as tmp:
+            edits=ArchiveEdits(FakeDump(Resource(rf_fixture()),bytes(512)),'data',Path(tmp))
+            edits.add('root/beta.bin',b'b'*20)
+            _,added=edits.finish()
+        self.assertEqual(added,1)
+
+    def test_archive_finish_rejects_span_past_packed_file(self):
+        from build import ArchiveEdits
+        edits=ArchiveEdits(FakeDump(Resource(rf_fixture()),bytes(512)),'data',None)
+        edits.add('root/beta.bin',b'b'*20)
+        edits.packs['root/']=edits.packs['root/'][:8]
+        with self.assertRaisesRegex(ValueError,'span'):
+            edits.finish()
+
+    def test_span_helper_bounds(self):
+        from smash4 import check_span
+        check_span(100,92,8)
+        check_span(100,100,0)
+        for offset,length in [(93,8),(-1,4),(0,-1)]:
+            with self.subTest(offset=offset,length=length),self.assertRaisesRegex(ValueError,'span'):
+                check_span(100,offset,length)
+
+
+class FakeDump:
+    """Synthetic stand-in for Dump: one resource and one packed archive."""
+    def __init__(self, resource, pack):
+        self.resources={'data':resource}
+        self._pack=pack
+
+    def pack(self, partition, parent):
+        return self._pack
 
 
 if __name__=='__main__':

@@ -13,6 +13,29 @@ def u32(data, offset):
     return struct.unpack_from('<I', data, offset)[0]
 
 
+def check_span(size, offset, length):
+    """Reject a byte span that is negative or runs past the end of a buffer."""
+    if offset < 0 or length < 0 or offset + length > size:
+        raise ValueError('Archive span outside packed file')
+
+
+def check_case_collisions(existing_paths, new_paths):
+    """Reject paths that differ only by case; Windows and FAT SD cards fold case.
+
+    A path identical to an existing one is a replacement and is allowed.
+    """
+    known = set(existing_paths)
+    folded = {p.casefold() for p in known}
+    for path in new_paths:
+        if path in known:
+            continue
+        key = path.casefold()
+        if key in folded:
+            raise ValueError('Case-insensitive resource path collision: ' + path)
+        known.add(path)
+        folded.add(key)
+
+
 @dataclass
 class Entry:
     index: int
@@ -271,6 +294,7 @@ class Dump:
         parent = max(parents,key=lambda e:len(e.path))
         physical = partition if entry.flags&0x800 else 'data'
         pack = self.pack(physical,parent)
+        check_span(len(pack), entry.offset, entry.compressed)
         blob = pack[entry.offset:entry.offset+entry.compressed]
         raw = zlib.decompress(blob) if blob[:2] in (b'\x78\x9c',b'\x78\xda',b'\x78\x01') else blob
         if len(raw)!=entry.decompressed:

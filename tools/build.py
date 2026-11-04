@@ -8,7 +8,7 @@ import struct
 import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
-from smash4 import Dump, Entry, Params, Resource, rebuild_resource
+from smash4 import Dump, Entry, Params, Resource, check_case_collisions, check_span, rebuild_resource
 
 TITLE = '0005000010144F00'
 DB = 'param/ui/ui_character_db.bin'
@@ -25,6 +25,20 @@ FIGHTERS = [
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def check_slot_positions(positions, taken):
+    """Reject new CSS slot positions that repeat, overlap kept rows, or overflow field 13.
+
+    Field 13 is stored as an unsigned 8-bit value (FORMATS kind 1).
+    """
+    if len(set(positions)) != len(positions):
+        raise ValueError('Duplicate CSS slot position')
+    overlap = sorted(set(positions) & set(taken))
+    if overlap:
+        raise ValueError('CSS slot position overlaps an existing row: '+', '.join(map(str,overlap)))
+    if any(p > 0xff for p in positions):
+        raise ValueError('CSS slot position exceeds the 8-bit field 13')
 
 
 def edit_database(raw, fighters):
@@ -54,6 +68,10 @@ def edit_database(raw, fighters):
             raise ValueError('Donor fighter does not match expected database')
     # Include the hidden normal Miis in allocation so their positions stay unique.
     nextpos=max(params.values(r)[13] for r in rows if params.values(r)[2] and not params.values(r)[10])+1
+    changed={f['row'] for f in fighters}
+    # Replaced rows give up their old position; every other row keeps it.
+    taken={original_values[i][13] for i in range(len(rows)) if i not in changed}
+    check_slot_positions([nextpos+order for order in range(len(fighters))], taken)
     for order,f in enumerate(fighters):
         donor=rows[f['donor']]
         begin=donor[0][0]
@@ -74,7 +92,6 @@ def edit_database(raw, fighters):
     if len(params.data)!=len(raw):raise ValueError('Database length changed')
     result=bytes(params.data)
     parsed=Params(result)
-    changed={f['row'] for f in fighters}
     for i,row in enumerate(rows):
         if i not in changed and original_values[i]!=parsed.values(parsed.groups[0][i]):
             raise ValueError('An unrelated database row changed')
@@ -97,6 +114,7 @@ class ArchiveEdits:
     def add(self,path,raw,template=None):
         lookup={e.path:e for e in self.resource.entries}
         existing=lookup.get(path)
+        check_case_collisions(set(lookup)|set(self.replacements),[path])
         parents=[e for e in self.resource.entries if e.directory and e.flags&0x400 and path.startswith(e.path)]
         parent=max(parents,key=lambda e:len(e.path))
         if parent.path not in self.packs:
@@ -137,7 +155,12 @@ class ArchiveEdits:
         for path,raw in self.replacements.items():
             e=after[path]
             parent=max((p for p in self.packs if path.startswith(p)),key=len)
-            unpacked=zlib.decompress(self.packs[parent][e.offset:e.offset+e.compressed])
+            pack=self.packs[parent]
+            check_span(len(pack),e.offset,e.compressed)
+            try:
+                unpacked=zlib.decompress(pack[e.offset:e.offset+e.compressed])
+            except zlib.error as error:
+                raise ValueError('Repacked content failed verification') from error
             if unpacked!=raw:
                 raise ValueError('Repacked content failed verification')
         files=[]
