@@ -25,6 +25,10 @@ Inspect the ZIP contents before sharing it. The scanner rejects common private
 path and credential patterns, but a human review is still required for new
 file types and diagnostic output.
 
+## Companion fail-closed behaviour
+
+The optional Aroma companion in `companion/` changes game code only when every guard passes: the US title ID (update v304 is enforced by the FunctionPatcher version arguments and the code signatures, not by the title ID), the `cross_f` module text bounds, the exact instruction signatures, an entry pointer inside the reported mappable range, and an enabled-forms mask that currently allows only form 58. Any failure, including a FunctionPatcher error during enable, removes the patch and leaves the hook disabled. If FunctionPatcher refuses the removal, the patch stays installed but inert, because the hook returns before writing while disabled, and the next enable reports it as pending instead of adding another. These guards prevent running on the wrong build; they are not a security boundary, and the companion is untested on hardware.
+
 ## Release privacy checklist
 
 1. Run the unit tests and the source packager from a clean checkout.

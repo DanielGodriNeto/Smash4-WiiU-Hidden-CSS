@@ -11,7 +11,7 @@ The original four/seven profiles have not passed runtime validation; seven-v2 pr
 - 06 HiddenSeven candidate: boots, but the user confirmed a CSS-loading crash in Cemu. The earlier byte-content verifier passed 316 imports and 11,308 unchanged members but missed unsafe pack localization. This build is now rejected by the current validator and must not be installed.
 - 07 HiddenSeven SharedUI: the user confirmed CSS loading and Giga Bowser Training in Cemu. A KO still restores Bowser. It removes 190 redundant UI language imports. Validation confirms 126 physical imports, 190 inherited shared references, 11,308 unchanged members and 925 patchlist records. Hardware behavior, results, other fighters and cosmetic rendering remain unverified.
 - Giga respawn investigation: an equivalent Cemu one-instruction engine probe changed the US-v304 Giga Bowser alternate assignment from Bowser (15) to Giga Bowser (58). The user confirmed Giga Bowser remained Giga after KO. The separately built WUPS companion is intended to reproduce that narrow post-initializer change with title, version, module-bound and instruction-signature guards. Its PowerPC build and Aroma load have not been run, and it has not run on hardware.
-- Companion scope (host-only evidence): the companion now restores four hidden forms (58->15, 59->22, 60->41, 61->30) through `companion/form_restore.h`. Only the Giga Bowser pair has any runtime evidence, and that evidence comes from the Cemu probe above. Forms 59, 60 and 61 have no assignment-site guards and no runtime evidence.
+- Companion scope (host-only evidence): the pure pair rules in `companion/form_restore.h` cover four pairs (58->15, 59->22, 60->41, 61->30), but the runtime mask in `companion/guard.h` enables only 58->15. Only the Giga Bowser pair has runtime evidence, from the Cemu probe above. Forms 59, 60 and 61 are disabled at runtime by design, because their assignment sites have no verified signature.
 
 ## Hidden-form respawn companion lifecycle matrix
 
@@ -26,16 +26,17 @@ Every cell is **UNTESTED on hardware and in Cemu**. Host tests check only the pu
 | Timeout | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
 | Rematch | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
 | Return to CSS | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
-| Assignment-site guard | present (signature at 0x02E45708) | MISSING | MISSING | MISSING |
+| Assignment-site guard | present (signature at 0x02E45708), enabled | MISSING, disabled by design | MISSING, disabled by design | MISSING, disabled by design |
 
 Known runtime failures from the table above still apply: results softlock and T-pose after a win, and freezes on win for forms.
 
 ## Host tests run for the companion pair rule
 
-- `python -m unittest discover -s tests -v` on the Windows host (gcc from Strawberry Perl): 29 tests, all OK, including the four C harness tests C1-C4 compiled with `-std=gnu11 -Wall -Wextra -Werror`.
-- The same suite inside the `devkitpro/devkitppc` Docker image (Debian gcc 12.2): 29 tests, all OK, no skips.
-- Mutation checks on copies outside the repo: a table entry changed from 60->41 to 60->40 fails C1, C2 and C3; an unconditional `return kind` fails C2 and C3.
-- `powerpc-eabi-gcc -fsyntax-only -Wall -Wextra` on `companion/main.c` with stub WUPS and FunctionPatcher headers: exit 0. The stubs are declarations only, so this is not a real WUPS SDK build.
+- `python -m unittest discover -s tests -v` on the Windows host (gcc from Strawberry Perl): 36 tests, 1 skipped. The skip is the sanitizer run of the guard harness, because that gcc has no ASan/UBSan runtime.
+- The same suite inside the `devkitpro/devkitppc` Docker image (Debian gcc 12.2): 36 tests, all OK, no skips, including the ASan/UBSan run of `tests/guard_host_harness.c`.
+- Guard tests in `tests/test_guard_host.py` cover the title gate, module bounds, signatures, entry-pointer validator, the enabled-forms mask (exactly form 58), the form-restore sweep, and the enable/disable state machine with fake FunctionPatcher ops (add failure, not applied, null handle, removal failure, all-or-nothing rollback).
+- Mutation checks on copies outside the repo: 10 mutants of `guard.h` (mask adds 59, alignment dropped, title accepts +1, 32-bit wrap in the entry range check, bounds off by one, enabled set before add, applied ignored, null handle accepted, rollback skips release, disable clears enabled after release). Each fails the harness at run time.
+- `powerpc-eabi-gcc -std=gnu11 -fsyntax-only -Wall -Wextra` in the devkitppc image, with wut headers and stub WUPS and FunctionPatcher headers, on `companion/main.c`: exit 0. The stubs are declarations only, so this is not a real WUPS SDK build.
 
 Not run: the real PowerPC plugin build (`tools/build_companion.ps1` needs the WUPS and FunctionPatcher SDKs), loading under Aroma, and any Cemu or hardware run.
 
