@@ -104,6 +104,7 @@ It is US-v304-specific, optional, and not hardware-validated.
 - [docs/VALIDATION.md](docs/VALIDATION.md): runtime evidence and failures.
 - [docs/NATIVE-FINDINGS.md](docs/NATIVE-FINDINGS.md): mapping evidence and
   invariants.
+- [docs/RESULTS-RESOURCE-SAFETY.md](docs/RESULTS-RESOURCE-SAFETY.md): results, victory and animation resource findings (report only).
 
 ## Maintainer and contributor handoff
 
