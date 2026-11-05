@@ -15,6 +15,7 @@ PUBLIC_FILES=[
     'tools/build_single_portrait_probe.py','docs/UI-FAILURE-AUDIT.md',
     'tests/test_ui_path_collisions.py',
     'tools/prepare_native_candidate.py','tools/export_with_sm4shexplorer.ps1','docs/NATIVE-FINDINGS.md',
+    'docs/RESULTS-RESOURCE-SAFETY.md',
     'tools/verify_official_candidate.py','tools/package_official_candidate.py',
     'tools/ui_mapping.py',
     'tests/test_official_validation.py',
