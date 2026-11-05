@@ -28,11 +28,11 @@ Confidence scale. High: figure read on the primary page in this pass and re-chec
 
 | Claim (paraphrased) | Source | Confidence | How verified |
 |---|---|---|---|
-| Since Brawl, boss character IDs were removed, so bosses are unplayable even with hacks (a Brawl Boss Battles exception is mentioned) | https://www.ssbwiki.com/Boss | Medium | Fetched twice; sentence located in the page intro. Wiki claim, no technical proof offered |
+| Since Brawl, boss character IDs were removed, so bosses are unplayable even with hacks (a Brawl Boss Battles exception is mentioned) | https://www.ssbwiki.com/Boss | Medium | Sentence located in the page intro. Wiki claim, no technical proof offered |
 | Master Hand, Crazy Hand and Master Core are listed as bosses of the Smash 4 games; Master Core is new in the 3DS version | https://www.ssbwiki.com/Boss | Medium | Fetched |
 | Master Hand and Crazy Hand share one HP pool on Wii U | https://www.ssbwiki.com/Master_Hand_(SSB4) , https://www.ssbwiki.com/Crazy_Hand_(SSB4) | High | Both pages fetched, same statement |
-| Wii U Master Hand HP: Solo 110 / 280 / 380 and Co-op 165 / 398 / 580 at Intensity 0.0 / 5.0 / 9.0 | https://www.ssbwiki.com/Master_Hand_(SSB4) | High | Table fetched twice, endpoints agree |
-| Crazy Hand is fought automatically on Wii U at Intensity 3.0 or higher | https://www.ssbwiki.com/Crazy_Hand_(SSB4) , https://www.ssbwiki.com/Boss | High | Three fetches agree |
+| Wii U Master Hand HP: Solo 110 / 280 / 380 and Co-op 165 / 398 / 580 at Intensity 0.0 / 5.0 / 9.0 | https://www.ssbwiki.com/Master_Hand_(SSB4) | High | Wiki table, not cross-checked |
+| Crazy Hand is fought automatically on Wii U at Intensity 3.0 or higher | https://www.ssbwiki.com/Crazy_Hand_(SSB4) , https://www.ssbwiki.com/Boss | High | Two wiki pages agree |
 | Master Core appears only at Intensity 5.1 or higher | https://www.ssbwiki.com/Master_Core , https://www.ssbwiki.com/Crazy_Hand_(SSB4) , https://www.ssbwiki.com/Boss | High for the wiki's statement; see conflicts (section 7) | Four fetches agree |
 | Wii U does not display the Master Core HP meter; 3DS does | https://www.ssbwiki.com/Master_Core | Medium | Fetched |
 | Wii U pause camera in the Master Core fight is limited to zoom at Intensity 8.0 and higher | https://www.ssbwiki.com/Master_Core | Medium | Fetched |
@@ -112,6 +112,6 @@ Each stage changes one variable. The maintainer runs every hardware or Cemu test
 
 ## 11. Sources and licence notes
 
-External pages (all fetched 2026-11-04): the SmashWiki pages Boss, Master_Hand_(SSB4), Crazy_Hand_(SSB4), Master_Core and SmashWiki:Copyrights on https://www.ssbwiki.com (Fighter_number appears only as a search snippet); https://en.wikipedia.org/wiki/Master_Hand; https://en.wikipedia.org/wiki/Nintendo_Network; https://github.com/jam1garner/Smash-Forge and its wiki; https://github.com/Sammi-Husky/Sm4sh-Tools; https://github.com/NemesisSSBU/Playable_Bosses. The Sm4shExplorer and Smash4ModdingTests repositories were checked earlier (front pages only, no boss, CSS or stock data mentioned) and not re-fetched.
+External pages (all fetched 2026-11-04): the SmashWiki pages Boss, Master_Hand_(SSB4), Crazy_Hand_(SSB4), Master_Core and SmashWiki:Copyrights on https://www.ssbwiki.com (Fighter_number appears only as a search snippet); https://en.wikipedia.org/wiki/Master_Hand; https://en.wikipedia.org/wiki/Nintendo_Network; https://github.com/jam1garner/Smash-Forge and its wiki; https://github.com/Sammi-Husky/Sm4sh-Tools; https://github.com/NemesisSSBU/Playable_Bosses. The Sm4shExplorer and Smash4ModdingTests repositories were only skimmed earlier (front pages, no boss, CSS or stock data seen); that is unverified and not re-checked.
 
 Licence: SmashWiki text is CC BY-SA, so this file paraphrases it, links the source and quotes no more than a few words. Figures such as HP values are facts, listed with their source. Wikipedia text is also CC BY-SA. Repository front pages were used for capability statements only.
