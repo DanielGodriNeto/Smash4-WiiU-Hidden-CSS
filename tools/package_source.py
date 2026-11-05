@@ -21,6 +21,7 @@ PUBLIC_FILES=[
     'tests/guard_host_harness.c','tests/test_guard_host.py',
     'tools/build_companion.ps1','tools/verify_companion.py',
     'tests/test_companion_validation.py',
+    'docs/BOSS-ENTITIES-RESEARCH.md',
 ]
 
 

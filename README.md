@@ -104,6 +104,8 @@ It is US-v304-specific, optional, and not hardware-validated.
 - [docs/VALIDATION.md](docs/VALIDATION.md): runtime evidence and failures.
 - [docs/NATIVE-FINDINGS.md](docs/NATIVE-FINDINGS.md): mapping evidence and
   invariants.
+- [docs/BOSS-ENTITIES-RESEARCH.md](docs/BOSS-ENTITIES-RESEARCH.md): research
+  only, not planned, not validated; Master Hand, Crazy Hand and Master Core.
 
 ## Maintainer and contributor handoff
 
