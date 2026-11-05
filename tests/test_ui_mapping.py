@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 from smash4 import Entry
-from ui_mapping import (check_import_placement, check_manifest_targets, check_new_ids, check_targets,
-    native_texture_ids, packed_folder, require_donors)
+from ui_mapping import (allocate_texture_id, check_import_placement, check_manifest_targets, check_new_ids, check_targets,
+    native_texture_ids, packed_folder, require_donors, texture_id)
 
 CHR='ui/replace/chr/'
 
@@ -80,6 +80,20 @@ class UiMappingTests(unittest.TestCase):
     def test_native_ids_reject_multi_texture(self):
         with self.assertRaisesRegex(ValueError,'multi-texture'):
             native_texture_ids([(CHR+'a.nut',nut(count=2))])
+
+    def test_texture_id_gidx_exactly_at_end_is_accepted(self):
+        self.assertEqual(texture_id(nut(0x28fe0005,size=28)),(24,0x28fe0005))
+
+    def test_texture_id_gidx_truncated_by_one_byte_is_rejected(self):
+        with self.assertRaisesRegex(ValueError,'GIDX'):
+            texture_id(nut(0x28fe0005,size=28)[:27])
+
+    def test_allocate_texture_id_last_32bit_value_is_usable(self):
+        self.assertEqual(allocate_texture_id(0xffffffff,set()),0xffffffff)
+
+    def test_allocate_texture_id_exhausted_past_32bit(self):
+        with self.assertRaisesRegex(ValueError,'exhausted'):
+            allocate_texture_id(0xfffffffe,{0xfffffffe,0xffffffff})
 
     def test_packed_folder_nearest_ancestor(self):
         dirs={CHR:directory(CHR,0x1604),CHR+'chr_10/':directory(CHR+'chr_10/',0x1e04)}
