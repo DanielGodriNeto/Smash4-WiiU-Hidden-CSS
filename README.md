@@ -104,6 +104,7 @@ It is US-v304-specific, optional, and not hardware-validated.
 - [docs/VALIDATION.md](docs/VALIDATION.md): runtime evidence and failures.
 - [docs/NATIVE-FINDINGS.md](docs/NATIVE-FINDINGS.md): mapping evidence and
   invariants.
+- [docs/REGRESSION-MATRIX.md](docs/REGRESSION-MATRIX.md): hidden-fighter regression matrix; every cell stays UNTESTED until maintainer run records exist.
 
 ## Maintainer and contributor handoff
 
