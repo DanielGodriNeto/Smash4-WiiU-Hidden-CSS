@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "not_applicable": [
+    {"mode": "css", "lifecycle": "ko", "reason": "No match runs in CSS, so no match event can occur."},
+    {"mode": "css", "lifecycle": "respawn", "reason": "No match runs in CSS, so no match event can occur."},
+    {"mode": "css", "lifecycle": "sudden-death", "reason": "No match runs in CSS, so no match event can occur."},
+    {"mode": "css", "lifecycle": "timeout", "reason": "No match runs in CSS, so no match event can occur."},
+    {"mode": "css", "lifecycle": "results", "reason": "No match runs in CSS, so no match event can occur."},
+    {"mode": "training", "lifecycle": "sudden-death", "reason": "Training has no stocks, no timer, no results screen."},
+    {"mode": "training", "lifecycle": "timeout", "reason": "Training has no stocks, no timer, no results screen."},
+    {"mode": "training", "lifecycle": "results", "reason": "Training has no stocks, no timer, no results screen."},
+    {"mode": "training", "lifecycle": "select", "reason": "Selection is exercised once in the css row; match modes start from it."},
+    {"mode": "versus", "lifecycle": "select", "reason": "Selection is exercised once in the css row; match modes start from it."},
+    {"mode": "cpu", "lifecycle": "select", "reason": "Selection is exercised once in the css row; match modes start from it."},
+    {"mode": "rematch", "lifecycle": "select", "reason": "Selection is exercised once in the css row; match modes start from it."}
+  ],
+  "runs": [],
+  "results": []
+}

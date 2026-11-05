@@ -105,6 +105,7 @@ It is US-v304-specific, optional, and not hardware-validated.
 - [docs/NATIVE-FINDINGS.md](docs/NATIVE-FINDINGS.md): mapping evidence and
   invariants.
 - [docs/RESULTS-RESOURCE-SAFETY.md](docs/RESULTS-RESOURCE-SAFETY.md): results, victory and animation resource findings (report only).
+- [docs/REGRESSION-MATRIX.md](docs/REGRESSION-MATRIX.md): hidden-fighter regression matrix; every cell stays UNTESTED until maintainer run records exist.
 
 ## Maintainer and contributor handoff
 

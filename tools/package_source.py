@@ -24,6 +24,8 @@ PUBLIC_FILES=[
     'tests/guard_host_harness.c','tests/test_guard_host.py',
     'tools/build_companion.ps1','tools/verify_companion.py',
     'tests/test_companion_validation.py',
+    'docs/REGRESSION-MATRIX.md','docs/regression-matrix.json',
+    'tools/check_regression_matrix.py','tests/test_regression_matrix.py',
 ]
 
 
