@@ -26,6 +26,7 @@ PUBLIC_FILES=[
     'tests/test_companion_validation.py',
     'docs/REGRESSION-MATRIX.md','docs/regression-matrix.json',
     'tools/check_regression_matrix.py','tests/test_regression_matrix.py',
+    'docs/BOSS-ENTITIES-RESEARCH.md',
 ]
 
 

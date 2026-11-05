@@ -106,6 +106,8 @@ It is US-v304-specific, optional, and not hardware-validated.
   invariants.
 - [docs/RESULTS-RESOURCE-SAFETY.md](docs/RESULTS-RESOURCE-SAFETY.md): results, victory and animation resource findings (report only).
 - [docs/REGRESSION-MATRIX.md](docs/REGRESSION-MATRIX.md): hidden-fighter regression matrix; every cell stays UNTESTED until maintainer run records exist.
+- [docs/BOSS-ENTITIES-RESEARCH.md](docs/BOSS-ENTITIES-RESEARCH.md): research
+  only, not planned, not validated; Master Hand, Crazy Hand and Master Core.
 
 ## Maintainer and contributor handoff
 
