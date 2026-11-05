@@ -19,3 +19,13 @@ All 88 added resource references also reuse the donor's embedded NUT `GIDX` text
 The builder now rejects case-insensitive path collisions before RF insertion, with regression tests for new/new and new/native collisions. A detailed local audit is saved at `build/test04-offline-audit.json` (not included in the public repository). Test05 avoids new physical texture copies, aliases, extra records and external flags; it remains untested and is not declared fixed.
 
 No additional console test is requested while the Wii U is unavailable. A conclusive crash diagnosis still needs either loader/debugger evidence or later controlled console tests. The offline findings above are reproducible facts, not a claim that the results/respawn defects are repaired.
+
+## Offline UI mapping checks
+
+`tools/ui_mapping.py` checks internal consistency only. It does not establish the cause of the `???` names, and it does not prove that the new slots render the intended art.
+
+- Texture-ID scan: every `.nut` under `ui/replace/chr/` in all four US partitions must be a single-texture NTWU file. Any other file stops prepare and verify. The scan scope is unchanged.
+- Asset uniqueness is checked in `tools/build.py` with row, ID and cosmetic uniqueness.
+- Prepare rejects a target that replaces a base-roster portrait, a repeated or case-only duplicate target, a case collision with a native file, a new texture ID that matches a native one, and a base with no donor portrait. A target that identically overwrites a native file is listed in `overwritten_native` in `build/native-candidate-report.json`; it is not rejected.
+- Verify rejects a manifest with duplicate targets, a direct import that cannot sit in its folder without a partial language pack, and a new texture ID that collides with a native chr NUT. Every direct import that replaces a native file is listed in `native_overwrites` in `build/official-verification.json`.
+- Not checked offline: which donor category folders are used (category policy), the effect of Question and sh_all overwrites on other menus, and texture rendering. The candidate report's `unverified` field lists the known gaps.

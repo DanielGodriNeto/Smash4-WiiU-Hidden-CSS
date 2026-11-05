@@ -53,7 +53,7 @@ def edit_database(raw, fighters):
     for f in fighters:
         if (f['row'],f['id'],f['cosmetic'],f['donor'],f['module']) not in allowed:
             raise ValueError('Unsupported fighter mapping; no arbitrary row replacement or append is permitted')
-    for field in ('row','id','cosmetic'):
+    for field in ('row','id','cosmetic','asset'):
         if len({f[field] for f in fighters})!=len(fighters):
             raise ValueError('Duplicate fighter '+field)
     # Reuse Final Smash, generic placeholder and enemy rows, preserving 82 rows.

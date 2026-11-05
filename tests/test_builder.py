@@ -94,6 +94,10 @@ class BuilderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Duplicate'):
             edit_database(fixture(),[FIGHTERS[0],FIGHTERS[0]])
 
+    def test_duplicate_asset_rejected_nonadjacent(self):
+        with self.assertRaisesRegex(ValueError,'Duplicate'):
+            edit_database(fixture(),[FIGHTERS[0],FIGHTERS[1],dict(FIGHTERS[2],asset=FIGHTERS[0]['asset'])])
+
     def test_normal_row_replacement_and_appending_rejected(self):
         for row in (16,82):
             f=dict(FIGHTERS[0],row=row)
