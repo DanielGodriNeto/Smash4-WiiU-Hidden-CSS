@@ -8,8 +8,9 @@ import struct
 import zlib
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from smash4 import Dump, Params, check_case_collisions, check_span, owns_pack
+from smash4 import Dump, Params, check_span, owns_pack
 from build import FIGHTERS, edit_database
+from ui_mapping import KNOWN_GAPS, allocate_texture_id, check_new_ids, check_targets, native_texture_ids, packed_folder, require_donors, texture_id
 
 
 def rpx_sections(path):
@@ -50,14 +51,6 @@ def cosmetic_map(sections):
     return table
 
 
-def texture_id(raw):
-    if len(raw)<16 or raw[:4]!=b'NTWU' or struct.unpack_from('>H',raw,6)[0]!=1:
-        raise ValueError('Expected a single-texture Wii U NUT')
-    at=raw.find(b'GIDX',16,256)
-    if at<0 or at+12>len(raw) or struct.unpack_from('>I',raw,at+4)[0]!=16:raise ValueError('Unexpected NUT GIDX layout')
-    return at+8,struct.unpack_from('>I',raw,at+8)[0]
-
-
 def native_head(pack,offset,length):
     """Return the first 256 bytes of a packed NUT entry; reject spans outside the pack."""
     check_span(len(pack),offset,length)
@@ -65,14 +58,6 @@ def native_head(pack,offset,length):
     if blob[:2] in (b'\x78\x9c',b'\x78\xda',b'\x78\x01'):
         return zlib.decompressobj().decompress(blob,256)
     return blob[:256]
-
-
-def allocate_texture_id(candidate,occupied):
-    """Return the first free 32-bit texture ID at or after candidate."""
-    while candidate in occupied:
-        candidate+=1
-    if candidate>0xffffffff:raise ValueError('Texture ID space exhausted')
-    return candidate
 
 
 def main():
@@ -107,32 +92,22 @@ def main():
     # IDs 60/62 are NOT mapped in this executable. Reuse existing placeholder
     # metadata rows with valid hardcoded names rather than inventing mappings.
     manifest=[]
-    occupied=set()
-    scan_count=0
     # Inspect every native fighter-UI NUT in all US resource partitions.
+    scanned=[]
     for part,resource in dump.resources.items():
         directories={p.path:p for p in resource.entries if p.directory}
         for e in resource.entries:
             if not e.path.startswith('ui/replace/chr/') or not e.path.endswith('.nut'):continue
-            parent_path=e.path.rsplit('/',1)[0]+'/'
-            while parent_path not in directories or not directories[parent_path].flags&0x400:
-                trimmed=parent_path.rstrip('/')
-                if '/' not in trimmed:raise ValueError('No native packed ancestor')
-                parent_path=trimmed.rsplit('/',1)[0]+'/'
-            parent=directories[parent_path]
             physical=part if e.flags&0x800 else 'data'
-            pack=dump.pack(physical,parent)
-            head=native_head(pack,e.offset,e.compressed)
-            if head[:4]!=b'NTWU':continue
-            if struct.unpack_from('>H',head,6)[0]!=1:
-                raise ValueError('Cannot certify unique IDs without a multi-texture parser')
-            _,identifier=texture_id(head)
-            occupied.add(identifier)
-            scan_count+=1
+            pack=dump.pack(physical,packed_folder(directories,e.path))
+            scanned.append((e.path,native_head(pack,e.offset,e.compressed)))
+    native_ids=native_texture_ids(scanned)
+    occupied=set(native_ids)
     identifier=0x28fe0000
-    seen=set()
-    report={'complete':False,'runtime_tested':False,'native_respawn_results_fixed':False,'exporter':'Sm4shExplorer 0.07.4','cosmetic_mappings':{},'roster':[],'native_ui_headers_checked':scan_count,'new_ui':[],'limitations':['Question/sh_all placeholder cosmetic rows repurposed; other menus using these generic cosmetics may show donor artwork.','Portraits/nameplates use ordinary fighter placeholders.','New texture IDs are collision-checked against fighter-UI headers; rendering must be tested.','No RPX or global native mapping patches applied. Respawn/results remain unresolved.']}
-    report['shared_ui_aliases_skipped']=0
+    report={'complete':False,'runtime_tested':False,'native_respawn_results_fixed':False,'exporter':'Sm4shExplorer 0.07.4','cosmetic_mappings':{},'roster':[],'native_ui_headers_checked':len(scanned),'new_ui':[],'unverified':list(KNOWN_GAPS)}
+    skipped={}
+    overwritten={}
+    donor_categories={}
     for part,resource in dump.resources.items():
         directories={e.path:e for e in resource.entries if e.directory}
         native_names={e.path for e in resource.entries}
@@ -143,27 +118,22 @@ def main():
             if (v[0],v[6],v[2])!=(cosmetic,0xffffffff,0):raise ValueError('Unexpected placeholder row')
         modified,slots=edit_database(original,fighters)
         if len(Params(modified).groups[0])!=82:raise ValueError('Native roster must retain 82 rows')
-        path=output/part/'param/ui/ui_character_db.bin'
-        path.parent.mkdir(parents=True,exist_ok=True)
-        path.write_bytes(modified)
-        manifest.append({'source':str(path),'directory':part+'/param/ui/'})
         report['roster']=slots
+        # Plan every new file first so all checks run before anything is written.
+        plan=[]
+        skipped[part]=[]
         for f in fighters:
             native_name=table[f['cosmetic']]
             report['cosmetic_mappings'][str(f['cosmetic'])]=native_name
             paths=[e.path for e in resource.entries if e.path.startswith('ui/replace/chr/') and e.path.endswith('_'+f['base']+'_01.nut')]
+            if part=='data':donor_categories[f['base']]=require_donors(f['base'],paths)
             for donor in paths:
-                parent_path=donor.rsplit('/',1)[0]+'/'
-                while parent_path not in directories or not directories[parent_path].flags&0x400:
-                    trimmed=parent_path.rstrip('/')
-                    if '/' not in trimmed:raise ValueError('No native packed ancestor')
-                    parent_path=trimmed.rsplit('/',1)[0]+'/'
                 # The native folder, not its inherited child records, determines
                 # whether a language pack physically exists. Creating a partial
                 # language pack for shared UI leaves ordinary-file offsets outside
                 # that small pack and fails during CSS bulk loading.
-                if not owns_pack(part,directories[parent_path]):
-                    report['shared_ui_aliases_skipped']+=1
+                if not owns_pack(part,packed_folder(directories,donor)):
+                    skipped[part].append(donor)
                     continue
                 raw,_,_=dump.read(part,donor)
                 at,old_id=texture_id(raw)
@@ -174,21 +144,31 @@ def main():
                 struct.pack_into('>I',data,at,new_id)
                 if data[:at]!=raw[:at] or data[at+4:]!=raw[at+4:]:raise ValueError('Texture pixels/header layout changed')
                 target=donor.replace('_'+f['base']+'_01.nut','_'+native_name+'_01.nut')
-                check_case_collisions(native_names,[target])
-                key=(part+'/'+target).casefold()
-                if key in seen:raise ValueError('Case-insensitive output collision')
-                seen.add(key)
-                path=output/part/target
-                path.parent.mkdir(parents=True,exist_ok=True)
-                path.write_bytes(data)
-                manifest.append({'source':str(path),'directory':part+'/'+target.rsplit('/',1)[0]+'/'})
-                report['new_ui'].append({'partition':part,'path':target,'old_texture_id':hex(old_id),'new_texture_id':hex(new_id)})
+                plan.append((target,old_id,new_id,bytes(data)))
+        targets=[target for target,_,_,_ in plan]
+        base_paths={p for p in native_names if any(p.endswith('_'+f['base']+'_01.nut') for f in fighters)}
+        overwritten[part]=check_targets(native_names,base_paths,targets)
+        check_new_ids(native_ids,[new_id for _,_,new_id,_ in plan])
+        path=output/part/'param/ui/ui_character_db.bin'
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_bytes(modified)
+        manifest.append({'source':str(path),'directory':part+'/param/ui/'})
+        for target,old_id,new_id,data in plan:
+            path=output/part/target
+            path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(data)
+            manifest.append({'source':str(path),'directory':part+'/'+target.rsplit('/',1)[0]+'/'})
+            report['new_ui'].append({'partition':part,'path':target,'old_texture_id':hex(old_id),'new_texture_id':hex(new_id)})
+    report['shared_ui_aliases_skipped']=sum(len(v) for v in skipped.values())
+    report['skipped_shared']=skipped
+    report['overwritten_native']=overwritten
+    report['donor_categories']=donor_categories
     manifest_path.parent.mkdir(parents=True,exist_ok=True)
     report_path.parent.mkdir(parents=True,exist_ok=True)
     manifest_path.write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     report_path.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
-    print('Prepared seven real fighter IDs using seven executable-defined cosmetics, 82 roster rows, one spelling per asset and unique UI IDs.')
-    print('Native UI headers inspected:',scan_count,'prepared files:',len(manifest))
+    print('Native UI headers inspected:',len(scanned),'prepared files:',len(manifest))
+    print('Native files overwritten:',sum(len(v) for v in overwritten.values()),'(see overwritten_native in the report)')
     print('Respawn/results are explicitly NOT fixed; this is not a completed release.')
 
 

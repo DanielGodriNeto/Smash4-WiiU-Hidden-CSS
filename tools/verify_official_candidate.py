@@ -10,6 +10,7 @@ import zlib
 from pathlib import Path
 from smash4 import Dump, Resource, Params, owns_pack
 from build import DB, FIGHTERS, edit_database
+from ui_mapping import check_import_placement, check_manifest_targets, check_new_ids, native_texture_ids, packed_folder, texture_id
 
 
 def patch_paths(raw):
@@ -59,6 +60,14 @@ class Export:
         return decode(blob,entry.decompressed)
 
 
+def native_chr_nuts(original, dump):
+    """Yield (path, bytes) for every native fighter-UI NUT in every partition."""
+    for part,resource in dump.resources.items():
+        for e in resource.entries:
+            if not e.directory and e.path.startswith('ui/replace/chr/') and e.path.endswith('.nut'):
+                yield e.path,original.member(part,e)
+
+
 def verify(root, patch, manifest):
     dump=Dump(root/'Games/Super Smash Bros/content',root/'Updates/Super Smash Bros/content')
     export=Export(patch,dump)
@@ -74,13 +83,15 @@ def verify(root, patch, manifest):
             if packed.stat().st_size!=parent.compressed:raise ValueError('Packed folder size differs from physical file')
     affected={p:tuple(f.relative_to(Path(patch)/p).as_posix().removesuffix('packed') for f in (Path(patch)/p).rglob('packed')) for p in dump.resources}
     inputs=json.loads(Path(manifest).read_text(encoding='utf-8'))
-    expected={}
+    targets=[]
     for item in inputs:
-        source=Path(item['source'])
-        part,relative=(item['directory']+source.name).split('/',1)
-        expected[part,relative]=source.read_bytes()
+        part,relative=(item['directory']+Path(item['source']).name).split('/',1)
+        targets.append((part,relative))
+    check_manifest_targets(targets)
+    expected={key:Path(item['source']).read_bytes() for key,item in zip(targets,inputs)}
     checked=flag_changes=inherited=0
     imported=set()
+    overwritten={part:[] for part in dump.resources}
     for part,resource in export.resources.items():
         paths=[e.path.casefold() for e in resource.entries]
         if len(paths)!=len(set(paths)):raise ValueError('Case-insensitive RF collision: '+part)
@@ -91,7 +102,9 @@ def verify(root, patch, manifest):
             key=part,e.path
             if key in expected:
                 if export.member(part,e)!=expected[key]:raise ValueError('Imported bytes differ: '+e.path)
+                check_import_placement(part,packed_folder(original_export.directories[part],e.path))
                 imported.add(key)
+                if e.path in originals:overwritten[part].append(e.path)
             elif part!='data' and ('data',e.path) in expected:
                 if e.flags&0x800:raise ValueError('Unexpected localized override of shared import')
                 if export.member(part,e)!=expected['data',e.path]:raise ValueError('Inherited shared import differs')
@@ -117,13 +130,15 @@ def verify(root, patch, manifest):
             v=database.values(database.groups[0][f['row']])
             if (v[0],v[6],v[7],v[9])!=(f['cosmetic'],f['id'],1,0):raise ValueError('Roster mismatch')
     if imported!=expected.keys():raise ValueError('Manifest imports missing from resource tables')
+    new_ids=[texture_id(data)[1] for (_,relative),data in expected.items() if relative.endswith('.nut')]
+    check_new_ids(native_texture_ids(native_chr_nuts(original_export,dump)),new_ids)
     files={p.relative_to(patch).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in Path(patch).rglob('*') if p.is_file()}
     paths=patch_paths((Path(patch)/'patchlist').read_bytes())
     original_paths=patch_paths((dump.patch/'patchlist').read_bytes())
     if not original_paths<=paths:raise ValueError('Original patchlist files omitted')
     replacements={p for p in files if p not in ('patchlist','resource','resource(us_en)','resource(us_fr)','resource(us_sp)')}
     if not replacements<=paths:raise ValueError('Generated physical files missing from patchlist')
-    return {'validation_schema':2,'physical_partition_layout_verified':True,'archive_validation_passed':True,'runtime_tested':False,'complete':False,'imported_files_verified':len(imported),'inherited_shared_imports_verified':inherited,'unchanged_members_verified':checked,'patchlist_records_verified':len(paths),'exporter_flag_changes':flag_changes,'files':files}
+    return {'validation_schema':2,'physical_partition_layout_verified':True,'archive_validation_passed':True,'runtime_tested':False,'complete':False,'imported_files_verified':len(imported),'inherited_shared_imports_verified':inherited,'unchanged_members_verified':checked,'patchlist_records_verified':len(paths),'exporter_flag_changes':flag_changes,'native_overwrites':{part:sorted(paths) for part,paths in overwritten.items()},'texture_ids_checked':len(new_ids),'placement_checked':len(imported),'files':files}
 
 
 if __name__=='__main__':

@@ -53,7 +53,7 @@ def edit_database(raw, fighters):
     for f in fighters:
         if (f['row'],f['id'],f['cosmetic'],f['donor'],f['module']) not in allowed:
             raise ValueError('Unsupported fighter mapping; no arbitrary row replacement or append is permitted')
-    for field in ('row','id','cosmetic'):
+    for field in ('row','id','cosmetic','asset'):
         if len({f[field] for f in fighters})!=len(fighters):
             raise ValueError('Duplicate fighter '+field)
     # Reuse Final Smash, generic placeholder and enemy rows, preserving 82 rows.
@@ -66,11 +66,10 @@ def edit_database(raw, fighters):
     for donor, fighter in [(16,15),(23,22),(39,41),(31,30),(1,0),(2,1),(3,2)]:
         if params.values(rows[donor])[6] != fighter:
             raise ValueError('Donor fighter does not match expected database')
-    # Include the hidden normal Miis in allocation so their positions stay unique.
-    nextpos=max(params.values(r)[13] for r in rows if params.values(r)[2] and not params.values(r)[10])+1
     changed={f['row'] for f in fighters}
-    # Replaced rows give up their old position; every other row keeps it.
+    # Replaced rows give up their old position; append after every kept row.
     taken={original_values[i][13] for i in range(len(rows)) if i not in changed}
+    nextpos=max(taken,default=-1)+1
     check_slot_positions([nextpos+order for order in range(len(fighters))], taken)
     for order,f in enumerate(fighters):
         donor=rows[f['donor']]

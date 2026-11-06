@@ -17,11 +17,16 @@ PUBLIC_FILES=[
     'tools/prepare_native_candidate.py','tools/export_with_sm4shexplorer.ps1','docs/NATIVE-FINDINGS.md',
     'docs/RESULTS-RESOURCE-SAFETY.md',
     'tools/verify_official_candidate.py','tools/package_official_candidate.py',
+    'tools/ui_mapping.py',
     'tests/test_official_validation.py',
+    'tests/test_ui_mapping.py',
     'companion/main.c','companion/form_restore.h','companion/guard.h','docs/RESPAWN-COMPANION.md',
     'tests/guard_host_harness.c','tests/test_guard_host.py',
     'tools/build_companion.ps1','tools/verify_companion.py',
     'tests/test_companion_validation.py',
+    'docs/REGRESSION-MATRIX.md','docs/regression-matrix.json',
+    'tools/check_regression_matrix.py','tests/test_regression_matrix.py',
+    'docs/BOSS-ENTITIES-RESEARCH.md',
 ]
 
 

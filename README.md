@@ -2,21 +2,21 @@
 
 Work in progress. **A complete stable mod has not been achieved.** Original seven-v2 fails to boot on Aroma; probe04 and candidate06 fail while entering CSS. Do not install those builds.
 
-Candidate07 uses official Sm4shExplorer 0.07.4 packing, seven existing rows and executable-verified cosmetic names. It corrects candidate06's partial language packs: shared portraits are imported once into data, while genuinely localized UI stays in its native partition. The user confirmed CSS loading and Giga Bowser Training in Cemu. An experimental, separately built Aroma companion targets the Giga Bowser respawn step after the entry initializer runs. Only form 58 (Giga Bowser) is enabled at runtime, and it has evidence only from the equivalent Cemu engine probe. Forms 59, 60 and 61 are disabled by design until their assignment-site signatures exist. The whole companion is not hardware validated. Results, UI rendering, other fighters and console behavior still require investigation.
+Candidate07 uses official Sm4shExplorer 0.07.4 packing, seven existing rows and executable-verified cosmetic names. It corrects candidate06's partial language packs: shared portraits are imported once into data, while genuinely localized UI stays in its native partition. The user confirmed CSS loading and Giga Bowser Training in Cemu. An experimental, separately built Aroma companion targets the Giga Bowser respawn step after the entry initializer runs. Only form 58 (Giga Bowser) is enabled at runtime; forms 59, 60 and 61 are disabled by design until their assignment-site signatures exist. A later Wii U test with the companion installed did not keep Giga Bowser after a KO; the cause is unknown because the plugin's guard log and exact build hashes were not recorded. In an earlier four-form test, all forms reverted by Sudden Death; normal KO behavior was not tested in that session. Treat the companion as an unsuccessful, unverified experiment. Results, UI rendering, other fighters and console behavior still require investigation.
 
 ## Candidate roster
 
 | Fighter | Fighter ID | Cosmetic ID | DB row | CSS position |
 |---|---:|---:|---:|---:|
-| Giga Bowser | 58 | 201 | 60 | 52 |
-| Wario-Man | 59 | 203* | 62 | 53 |
-| Giga Mac | 60 | 202 | 61 | 54 |
-| Mega Lucario | 61 | 204* | 63 | 55 |
-| Fighting Mii Brawler | 62 | 219 | 73 | 56 |
-| Fighting Mii Swordfighter | 63 | 220 | 74 | 57 |
-| Fighting Mii Gunner | 64 | 221 | 75 | 58 |
+| Giga Bowser | 58 | 201 | 60 | 61 |
+| Wario-Man | 59 | 203* | 62 | 62 |
+| Giga Mac | 60 | 202 | 61 | 63 |
+| Mega Lucario | 61 | 204* | 63 | 64 |
+| Fighting Mii Brawler | 62 | 219 | 73 | 65 |
+| Fighting Mii Swordfighter | 63 | 220 | 74 | 66 |
+| Fighting Mii Gunner | 64 | 221 | 75 | 67 |
 
-All numbers are decimal and rows are zero based. CSS position is field13, distinct from fighter ID and database row. *203/204 repurpose Question/sh_all placeholder cosmetics; these are valid native names, not dedicated Wario-Man/Mega Lucario cosmetic mappings. Other menus using generic artwork may be affected. IDs60/62 previously used as cosmetics are absent from this executable's mapping table and were incorrect.
+All numbers are decimal and rows are zero based. CSS position is field13, distinct from fighter ID and database row. The table records the inspected candidate; the builder now computes positions by appending after the highest field-13 value in every kept row, so regenerated positions can differ if the input database differs. Their CSS layout still requires hardware validation. *203/204 repurpose Question/sh_all placeholder cosmetics; these are valid native names, not dedicated Wario-Man/Mega Lucario cosmetic mappings. Other menus using generic artwork may be affected. IDs60/62 previously used as cosmetics are absent from this executable's mapping table and were incorrect.
 
 The 82-row database, normal fighter rows, Random and normal Mii menu remain intact. Each added fighter uses c00. Portraits and nameplates are ordinary-fighter placeholders, not completed custom artwork. Boss/item icons whose fighter ID is 0xFFFFFFFF do not provide controllable fighter modules and are excluded.
 
@@ -46,7 +46,7 @@ The private candidate ZIP contains this directory tree. Use one pack at a time; 
 
 See [native findings](docs/NATIVE-FINDINGS.md), [failed UI audit](docs/UI-FAILURE-AUDIT.md), [test record](docs/VALIDATION.md) and [sources](docs/SOURCES.md). Offline checks compare imported bytes and affected archive members; they do not establish console stability.
 
-The [experimental hidden-form respawn companion](docs/RESPAWN-COMPANION.md) is a separately built WUPS plugin with narrow US-v304 code signatures. Its pure rules live in `companion/guard.h`, and it fails closed. Only Giga Bowser (58) is enabled at runtime; forms 59, 60 and 61 are masked off. It is not bundled with the SDCafiine candidate and has no console validation.
+The [experimental hidden-form respawn companion](docs/RESPAWN-COMPANION.md) is a separately built WUPS plugin with narrow US-v304 code signatures. Its pure rules live in `companion/guard.h`, and it fails closed. Only Giga Bowser (58) is enabled at runtime; forms 59, 60 and 61 are masked off. It is not bundled with the SDCafiine candidate. The one reported Wii U KO attempt failed to preserve Giga Bowser, and the cause remains unknown.
 
 Public distribution is restricted to source, synthetic tests and documentation. The explicit allowlist and privacy scanner in `tools/package_source.py` exclude dumps, game scripts, decrypted executables, tool downloads, local paths and generated Nintendo assets. No game-data ZIP belongs in this repository.
 
@@ -105,6 +105,9 @@ It is US-v304-specific, optional, and not hardware-validated.
 - [docs/NATIVE-FINDINGS.md](docs/NATIVE-FINDINGS.md): mapping evidence and
   invariants.
 - [docs/RESULTS-RESOURCE-SAFETY.md](docs/RESULTS-RESOURCE-SAFETY.md): results, victory and animation resource findings (report only).
+- [docs/REGRESSION-MATRIX.md](docs/REGRESSION-MATRIX.md): hidden-fighter regression matrix; every cell stays UNTESTED until maintainer run records exist.
+- [docs/BOSS-ENTITIES-RESEARCH.md](docs/BOSS-ENTITIES-RESEARCH.md): research
+  only, not planned, not validated; Master Hand, Crazy Hand and Master Core.
 
 ## Maintainer and contributor handoff
 
