@@ -23,17 +23,17 @@ ASSUMPTION, not verified on hardware: the fighter entry lies inside the range re
 
 Enable is all or nothing. `guard_enable` checks the title, module, bounds, signatures and range before touching FunctionPatcher. It then initializes the library and adds one patch, and it requires `applied` to be true and the handle to be non-zero. Any failure rolls back by removing the patch with `FunctionPatcher_RemoveFunctionPatch` and deinitializing the library. If removal fails, the handle is kept, the hook stays disabled, and the next enable reports `GUARD_STUCK`. `guard_disable` runs on application start, application end and plugin deinit. The removal semantics come from the FunctionPatcher header and are not verified at runtime. The teardown race is also unverified.
 
-Lifecycle is UNTESTED on hardware and in Cemu. Forms 59, 60 and 61 are disabled at runtime by design.
+The companion has now been attempted on Wii U hardware but did not pass its target test: with the latest supplied pack and a separately installed `.wps`, Giga Bowser reverted to Bowser after a KO. The plugin's guard log, exact plugin/candidate hashes, and game update were not recorded, so it is unknown whether the hook loaded and passed its guards. Do not treat the companion as working on console. In an earlier four-form battle, hidden-form behavior had stopped working by Sudden Death, but the individual form outcomes are unknown. Forms 59, 60 and 61 remain disabled at runtime by design.
 
 ## Evidence
 
-Only Giga Bowser (58 -> 15) was tested, and only through the equivalent one-instruction Cemu engine probe: changing the native alternate assignment from Bowser to Giga Bowser kept Giga Bowser after a KO. The 59, 60 and 61 pairs come from the native helper mapping in `docs/NATIVE-FINDINGS.md`; they have no runtime evidence.
+The equivalent one-instruction Cemu engine probe changed the Giga Bowser alternate assignment from Bowser to Giga Bowser and kept Giga Bowser after a KO. This is probe evidence, not a companion-plugin pass. In the later Wii U companion test, Giga Bowser reverted after a KO. The 59, 60 and 61 pairs come from the native helper mapping in `docs/NATIVE-FINDINGS.md`; they have no runtime evidence.
 
 **KNOWN GAP:** the guard signatures for forms 59, 60 and 61 are unknown. The code guards only the initializer and the Giga Bowser (58) assignment site. For the other three forms the mask keeps the hook from writing at all, so the pair match and `code_matches()` never run for them. The native assignment sites for those forms were not located, so enabling them is not yet possible. Closing this gap needs the assignment-site words from the user's own binary.
 
 The hook runs on any initializer call that matches an enabled pair, not only on KO. It may therefore also affect other transitions, such as Final Smash handling. Regression testing on the base roster is required before any wider claim.
 
-It is **not hardware validated**. It does not fix results, entry animation, portraits/nameplates, enemy-Mii forms, or the known results softlock and T-pose issues. See `docs/VALIDATION.md` for the per-form lifecycle matrix (all untested).
+It is **not successfully hardware validated**. The one reported Wii U KO attempt failed to preserve Giga Bowser, and the cause has not been diagnosed. It does not fix results, entry animation, portraits/nameplates, enemy-Mii forms, or the known results softlock and T-pose issues. See `docs/VALIDATION.md` for observed failures and the incomplete per-form lifecycle matrix.
 
 ## Build and use
 

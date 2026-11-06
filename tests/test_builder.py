@@ -74,6 +74,7 @@ class BuilderTests(unittest.TestCase):
         modified,report=edit_database(fixture(),FIGHTERS)
         self.assertEqual(len({r['css_position'] for r in report}),7)
         self.assertEqual(len({r['cosmetic'] for r in report}),7)
+        self.assertEqual([r['css_position'] for r in report],list(range(59,66)))
         p=Params(modified)
         self.assertEqual([p.values(p.groups[0][i])[6] for i in [73,74,75]],[62,63,64])
 
@@ -134,19 +135,19 @@ class BuilderTests(unittest.TestCase):
         pos=p.groups[0][0][0][0]
         self.assertEqual(p.data[pos+1:pos+5],b'\1\2\3\4')
 
-    def test_dlc_row_overlapping_new_slot_rejected(self):
+    def test_new_slots_follow_kept_dlc_row(self):
         p=Params(fixture())
         p.set(p.groups[0][80][10],1)
         p.set(p.groups[0][80][13],59)
-        with self.assertRaisesRegex(ValueError,'overlaps'):
-            edit_database(bytes(p.data),FIGHTERS)
+        _,report=edit_database(bytes(p.data),FIGHTERS)
+        self.assertEqual([r['css_position'] for r in report],list(range(60,67)))
 
     def test_dlc_row_outside_new_slots_accepted(self):
         p=Params(fixture())
         p.set(p.groups[0][80][10],1)
         p.set(p.groups[0][80][13],200)
         _,report=edit_database(bytes(p.data),FIGHTERS)
-        self.assertEqual([r['css_position'] for r in report],list(range(59,66)))
+        self.assertEqual([r['css_position'] for r in report],list(range(201,208)))
 
     def test_replaced_row_old_position_is_not_taken(self):
         p=Params(fixture())

@@ -64,10 +64,11 @@ known to be enemy-oriented actors, not full retail fighters.
 
 The builder rejects new CSS field-13 positions that repeat, equal a field-13
 value held by a row that is not replaced, or exceed the unsigned 8-bit field.
-Replaced rows release their old values. Where new slots are placed (after the
-maximum of non-DLC rows) is unchanged and remains an open decision; see
-`docs/VALIDATION.md`. Grid capacity is not checked because the repository has
-no verified grid dimensions.
+Replaced rows release their old values. New slots are computed after the
+maximum field-13 value among all kept rows, including DLC. The actual
+positions therefore depend on the input database and are included in the
+generated report. Grid capacity is not checked because the repository has no
+verified grid dimensions; see `docs/VALIDATION.md`.
 
 Resource localization is determined by the packed-folder record. Inherited
 child flags do not prove that a language partition owns a physical copy.

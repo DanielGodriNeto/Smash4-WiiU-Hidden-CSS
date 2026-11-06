@@ -10,19 +10,20 @@ The original four/seven profiles have not passed runtime validation; seven-v2 pr
 - 05 SinglePortrait: built, awaiting console testing. Temporarily reassigns normal Bowser's existing CSS portrait record to Giga Bowser. No new records, external flags, name blocks, nameplates or aliases. Normal Bowser may have a blank icon during this diagnostic. All packed files and patchlist remain identical to test03. Respawn/results are unchanged.
 - 06 HiddenSeven candidate: boots, but the user confirmed a CSS-loading crash in Cemu. The earlier byte-content verifier passed 316 imports and 11,308 unchanged members but missed unsafe pack localization. This build is now rejected by the current validator and must not be installed.
 - 07 HiddenSeven SharedUI: the user confirmed CSS loading and Giga Bowser Training in Cemu. A KO still restores Bowser. It removes 190 redundant UI language imports. Validation confirms 126 physical imports, 190 inherited shared references, 11,308 unchanged members and 925 patchlist records. Hardware behavior, results, other fighters and cosmetic rendering remain unverified.
-- Giga respawn investigation: an equivalent Cemu one-instruction engine probe changed the US-v304 Giga Bowser alternate assignment from Bowser (15) to Giga Bowser (58). The user confirmed Giga Bowser remained Giga after KO. The separately built WUPS companion is intended to reproduce that narrow post-initializer change with title, version, module-bound and instruction-signature guards. Its PowerPC build and Aroma load have not been run, and it has not run on hardware.
+- Giga respawn investigation: an equivalent Cemu one-instruction engine probe changed the US-v304 Giga Bowser alternate assignment from Bowser (15) to Giga Bowser (58); the user confirmed that probe kept Giga Bowser after KO. The separately built WUPS companion is intended to reproduce that narrow post-initializer change with title, version, module-bound and instruction-signature guards.
 - Companion scope (host-only evidence): the pure pair rules in `companion/form_restore.h` cover four pairs (58->15, 59->22, 60->41, 61->30), but the runtime mask in `companion/guard.h` enables only 58->15. Only the Giga Bowser pair has runtime evidence, from the Cemu probe above. Forms 59, 60 and 61 are disabled at runtime by design, because their assignment sites have no verified signature.
+- New user hardware report: in an earlier four-form battle, hidden-form behavior had stopped working by Sudden Death; which individual forms reverted is unknown, and normal KO/respawn was not tested in that session. In a later one-on-one test using the latest supplied SDCafiine pack and a separately installed `.wps` companion, Giga Bowser reverted to Bowser after a KO. Thus the intended companion behavior was not achieved in that console test. The exact candidate/archive and plugin hashes, game update, and plugin guard log are not recorded, so the cause is unknown. The Little Mac Final Smash form reached its victory screen but appeared as regular Little Mac in a T-pose; the user reported no crash in that test. This is consistent with the known missing/unsafe results-animation resources, not proof that other results paths are safe. The companion has been attempted on hardware but is not successfully validated. Issue #3 remains open for reproduction; issue #4 tracks results/victory resource safety.
 
 ## Hidden-form respawn companion lifecycle matrix
 
-Every cell is **UNTESTED on hardware and in Cemu**. Host tests check only the pure pair rule.
+No complete, hash-identified matrix run is recorded. Host tests check only the pure pair rule. The individual user observations above are failures/partial outcomes, but lack enough per-run metadata to populate the generated matrix safely.
 
 | Lifecycle path | 58 Giga Bowser | 59 Wario-Man | 60 Giga Mac | 61 Mega Lucario |
 |---|---|---|---|---|
 | Match entry (initializer runs) | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
-| Respawn after KO | UNTESTED (Cemu probe: kept Giga after KO) | UNTESTED | UNTESTED | UNTESTED |
+| Respawn after KO | Hardware attempt: reverted to Bowser; Cemu probe kept Giga | UNTESTED | UNTESTED | UNTESTED |
 | Final stock loss | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
-| Sudden Death | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
+| Sudden Death | UNTESTED (which forms reverted is unknown) | UNTESTED (which forms reverted is unknown) | UNTESTED (which forms reverted is unknown) | UNTESTED (which forms reverted is unknown) |
 | Timeout | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
 | Rematch | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
 | Return to CSS | UNTESTED | UNTESTED | UNTESTED | UNTESTED |
