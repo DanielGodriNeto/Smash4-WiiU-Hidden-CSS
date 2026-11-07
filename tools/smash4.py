@@ -66,7 +66,7 @@ class Resource:
     def __init__(self, data):
         try:
             self._parse(data)
-        except (struct.error, IndexError) as error:
+        except (struct.error, IndexError, zlib.error) as error:
             raise ValueError('Corrupt Smash Wii U resource file: '+str(error)) from error
 
     def _parse(self, data):

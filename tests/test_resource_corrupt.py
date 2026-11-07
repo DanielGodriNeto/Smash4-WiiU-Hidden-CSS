@@ -23,6 +23,12 @@ class CorruptResourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             Resource(self.make(0, 5))
 
+    def test_truncated_or_garbage_body_raises_value_error(self):
+        for data in (b'RF'+bytes(126), b'RF'+bytes(126)+b'x', b'RF'+bytes(126)+bytes(60)):
+            with self.subTest(length=len(data)):
+                with self.assertRaises(ValueError):
+                    Resource(data)
+
     def test_not_a_resource_still_rejected(self):
         with self.assertRaises(ValueError):
             Resource(b'XX' + bytes(200))
