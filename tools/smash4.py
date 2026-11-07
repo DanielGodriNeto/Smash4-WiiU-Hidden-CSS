@@ -64,6 +64,12 @@ def owns_pack(partition, parent):
 
 class Resource:
     def __init__(self, data):
+        try:
+            self._parse(data)
+        except (struct.error, IndexError) as error:
+            raise ValueError('Corrupt Smash Wii U resource file: '+str(error)) from error
+
+    def _parse(self, data):
         if data[:2] != b'RF':
             raise ValueError('Not a Smash Wii U resource file')
         self.header = bytearray(data[:128])
