@@ -18,6 +18,9 @@
  * separate check in main.c, then set the form's bit here, then update docs/RESPAWN-COMPANION.md. */
 #define GUARD_ENABLED_FORMS_MASK (UINT64_C(1) << 58)
 
+/* Default for the plugin setting when no value is stored. Default OFF, experimental. */
+#define GUARD_DEFAULT_ENABLED false
+
 /* Entry fields read by the hook: kind at +0x10 and alternate at +0x14, so the reads end at +0x18. */
 #define GUARD_ENTRY_SPAN UINT32_C(0x18)
 
@@ -45,6 +48,7 @@ typedef enum guard_reason {
     GUARD_PATCH_HANDLE_NULL,
     GUARD_REMOVE_FAILED,
     GUARD_STUCK,
+    GUARD_CONFIG_OFF,
 } guard_reason_t;
 
 static inline bool guard_title_allowed(uint64_t title_id) {
@@ -167,6 +171,8 @@ static inline const char *guard_reason_text(guard_reason_t reason) {
         return "[HiddenCSS] Hook removal failed.\n";
     case GUARD_STUCK:
         return "[HiddenCSS] Hook removal is pending; respawn hook stays disabled.\n";
+    case GUARD_CONFIG_OFF:
+        return "[HiddenCSS] Respawn hook inactive: disabled in plugin settings.\n";
     }
     return "[HiddenCSS] Unknown hook state.\n";
 }
@@ -226,6 +232,26 @@ static inline guard_reason_t guard_enable(guard_state_t *st, const guard_ops_t *
     st->enabled = true;
     ops->log(GUARD_OK);
     return GUARD_OK;
+}
+
+/* Resolves the stored plugin setting. Read error (any storage failure) fails closed to false.
+ * A missing key takes GUARD_DEFAULT_ENABLED. Otherwise the stored value is used. */
+static inline bool guard_config_resolve(bool read_ok, bool found, bool stored) {
+    if (!read_ok) return false;
+    if (!found) return GUARD_DEFAULT_ENABLED;
+    return stored;
+}
+
+/* Applies the resolved setting. wanted=false always tears down: the patch is removed before
+ * enabled is cleared, and a removal failure is kept and logged by guard_disable. */
+static inline guard_reason_t guard_apply(guard_state_t *st, const guard_ops_t *ops,
+                                         const guard_facts_t *facts, bool wanted) {
+    if (!wanted) {
+        guard_disable(st, ops);
+        ops->log(GUARD_CONFIG_OFF);
+        return GUARD_CONFIG_OFF;
+    }
+    return guard_enable(st, ops, facts);
 }
 
 #endif

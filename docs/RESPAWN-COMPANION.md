@@ -46,3 +46,9 @@ Build from source with the pinned/current official WUPS and FunctionPatcher SDK 
 The generated `.wps` needs Aroma's WUPS support and the separately installed FunctionPatcherModule/WUMS prerequisites documented by the FunctionPatcher project. Do not install it alongside unknown engine-patching plugins. Back up the SD card, use the US v304 game only, and remove the plugin immediately after a hang or unexpected behavior.
 
 No binary plugin or Nintendo data is committed or included in the source ZIP.
+
+## Settings and persisted state
+
+The hook is **OFF by default** (`GUARD_DEFAULT_ENABLED` in `companion/guard.h`, experimental). Turn it on in the WUPS config menu: category "Settings", item "Enable respawn hook (experimental, US v304)". The value is stored under storage id `hidden_css_respawn`, key `enabled`. A missing key stores OFF. Any other read error, or a failed config API init, keeps the hook OFF. Toggling OFF removes the patch and deinitializes FunctionPatcher, and the next menu close applies the change. The plugin writes one `[HiddenCSS]` log line per state: active, inactive (disabled in settings), or failed (removal or storage error).
+
+NOT verified: the real WUPS menu, that the stored value survives a reboot, dynamic patch removal on the console, the order of the value-changed and menu-closed callbacks, and the case where the menu is opened outside the game (the module is then absent, so the hook stays off until the game starts with the setting ON).

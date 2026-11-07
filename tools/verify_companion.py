@@ -18,7 +18,7 @@ MAIN_REQUIRED = (
     'guard_may_read_entry(guard_state.enabled, (uint32_t)(uintptr_t)entry',
     'guard_restored_alternate(kind_value, current)', '*alternate = restored;',
     'guard_title_allowed(', 'guard_bounds_ok(', 'guard_signature_ok(',
-    'guard_enable(', 'guard_disable(', 'OSGetMapVirtAddrRange(',
+    'guard_apply(', 'guard_disable(', 'OSGetMapVirtAddrRange(',
     'module.textSize', 'code_matches()', '304, 304',
 )
 GUARD_REQUIRED = (

@@ -156,13 +156,15 @@ static void test_combined_restore_changes_only_giga(void) {
 
 /* ---- Reason texts ---- */
 static void test_reason_texts(void) {
-    for (int r = GUARD_OK; r <= GUARD_STUCK; ++r) {
+    for (int r = GUARD_OK; r <= GUARD_CONFIG_OFF; ++r) {
         const char *text = guard_reason_text((guard_reason_t)r);
         CHECK(text != NULL);
         CHECK(text != NULL && strlen(text) > 0u && text[strlen(text) - 1u] == '\n');
     }
     CHECK(strcmp(guard_reason_text(GUARD_OK),
                  "[HiddenCSS] Experimental hidden-form respawn hook active for US v304.\n") == 0);
+    CHECK(strcmp(guard_reason_text(GUARD_CONFIG_OFF),
+                 "[HiddenCSS] Respawn hook inactive: disabled in plugin settings.\n") == 0);
 }
 
 /* ---- Fake FunctionPatcher ops and state machine ---- */
@@ -448,6 +450,90 @@ static void test_disable_removal_failure_keeps_library(void) {
     CHECK(logged_exactly(GUARD_REMOVE_FAILED));
 }
 
+/* ---- Plugin setting: resolved on/off value ---- */
+static void test_config_resolve_truth_table(void) {
+    CHECK(!guard_config_resolve(false, false, false));
+    CHECK(!guard_config_resolve(false, false, true));
+    CHECK(!guard_config_resolve(false, true, false));
+    CHECK(!guard_config_resolve(false, true, true));
+    CHECK(guard_config_resolve(true, false, false) == GUARD_DEFAULT_ENABLED);
+    CHECK(guard_config_resolve(true, false, true) == GUARD_DEFAULT_ENABLED);
+    CHECK(!guard_config_resolve(true, true, false));
+    CHECK(guard_config_resolve(true, true, true));
+}
+
+static void test_default_setting_is_off(void) {
+    CHECK(!GUARD_DEFAULT_ENABLED);
+}
+
+/* ---- Plugin setting: apply(wanted) state machine ---- */
+static void test_apply_off_fresh_state_never_adds(void) {
+    guard_state_t st = {0};
+    guard_facts_t facts = good_facts();
+    fake_reset(&st);
+    CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
+    CHECK(traced(""));
+    CHECK(!st.enabled && !st.has_handle && !st.lib_ready);
+    CHECK(logged_exactly(GUARD_CONFIG_OFF));
+}
+
+static void test_apply_on_then_off_removes_before_flag_clears(void) {
+    guard_state_t st = {0};
+    guard_facts_t facts = good_facts();
+    fake_reset(&st);
+    CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_OK);
+    CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
+    CHECK(traced("IARD"));
+    CHECK(!enabled_at_remove);
+    CHECK(last_removed == FAKE_HANDLE);
+    CHECK(!st.enabled && !st.has_handle && !st.lib_ready);
+    CHECK(log_count == 2u && logged[0] == GUARD_OK && logged[1] == GUARD_CONFIG_OFF);
+}
+
+static void test_apply_off_removal_failure_keeps_handle(void) {
+    guard_state_t st = {0};
+    guard_facts_t facts = good_facts();
+    fake_reset(&st);
+    CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_OK);
+    log_count = 0u;
+    fake_remove_ok = false;
+    CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
+    CHECK(traced("IAR"));
+    CHECK(!st.enabled && st.has_handle && st.lib_ready);
+    CHECK(log_count == 2u && logged[0] == GUARD_REMOVE_FAILED && logged[1] == GUARD_CONFIG_OFF);
+    CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_STUCK);
+    CHECK(traced("IAR"));
+    CHECK(!st.enabled);
+    fake_remove_ok = true;
+    CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
+    CHECK(traced("IARRD"));
+    CHECK(!st.has_handle && !st.lib_ready && !st.enabled);
+}
+
+static void test_apply_toggle_cycles_leave_nothing_held(void) {
+    guard_state_t st = {0};
+    guard_facts_t facts = good_facts();
+    fake_reset(&st);
+    for (unsigned cycle = 0; cycle < 3u; ++cycle) {
+        CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_OK);
+        CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
+        CHECK(!st.enabled && !st.has_handle && !st.lib_ready);
+    }
+    CHECK(traced("IARDIARDIARD"));
+    CHECK(remove_count == 3u);
+}
+
+static void test_apply_on_failed_preflight_holds_nothing(void) {
+    guard_state_t st = {0};
+    guard_facts_t facts = good_facts();
+    fake_reset(&st);
+    facts.signature_ok = false;
+    CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_SIGNATURE_MISMATCH);
+    CHECK(traced(""));
+    CHECK(!st.enabled && !st.has_handle && !st.lib_ready);
+    CHECK(logged_exactly(GUARD_SIGNATURE_MISMATCH));
+}
+
 int main(void) {
     test_title_gate();
     test_bounds();
@@ -471,6 +557,13 @@ int main(void) {
     test_disable_removes_held_handle_without_enable();
     test_remove_once_per_added_patch();
     test_disable_removal_failure_keeps_library();
+    test_config_resolve_truth_table();
+    test_default_setting_is_off();
+    test_apply_off_fresh_state_never_adds();
+    test_apply_on_then_off_removes_before_flag_clears();
+    test_apply_off_removal_failure_keeps_handle();
+    test_apply_toggle_cycles_leave_nothing_held();
+    test_apply_on_failed_preflight_holds_nothing();
     if (failures != 0) {
         fprintf(stderr, "%d of %d checks failed\n", failures, checks);
         return 1;

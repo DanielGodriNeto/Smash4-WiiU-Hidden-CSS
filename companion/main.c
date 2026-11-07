@@ -1,5 +1,8 @@
 /* Experimental US v304 Aroma companion. No Nintendo code is bundled. */
 #include <wups.h>
+/* Settings and storage usage follows the official example plugin:
+ * https://github.com/wiiu-env/WiiUPluginSystem/blob/main/plugins/example_plugin/src/main.c */
+#include <wups/config/WUPSConfigItemBoolean.h>
 #undef DECL_FUNCTION
 #include <function_patcher/function_patching.h>
 #include <coreinit/debug.h>
@@ -17,6 +20,11 @@ WUPS_PLUGIN_VERSION("0.1.0-experimental");
 WUPS_PLUGIN_AUTHOR("CSS Expansion Contributors");
 WUPS_PLUGIN_LICENSE("MIT");
 
+WUPS_USE_STORAGE("hidden_css_respawn");
+
+#define SETTING_ENABLED_KEY "enabled"
+#define SETTING_LABEL "Enable respawn hook (experimental, US v304)"
+
 #define ENTRY_INIT_ADDRESS 0x02E45558u
 #define GIGA_ASSIGNMENT_ADDRESS 0x02E45708u
 
@@ -28,6 +36,8 @@ static uint32_t target_offset;
 static uint32_t entry_range_lo;
 static uint32_t entry_range_size;
 static FunctionPatcherStatus last_remove_status;
+/* Resolved plugin setting. Starts OFF, so nothing is enabled before the setting is read. */
+static bool setting_wanted = false;
 
 static uint32_t my_initialize_entry(void *entry) {
     /* Preserve the native r3 return even if callers treat this routine as void. */
@@ -122,11 +132,81 @@ static void op_log(guard_reason_t reason) {
 
 static const guard_ops_t guard_ops = {op_init_library, op_add_patch, op_remove_patch, op_deinit_library, op_log};
 
-ON_APPLICATION_START() {
-    guard_disable(&guard_state, &guard_ops);
+static void apply_setting(void) {
     guard_facts_t facts = {0};
     collect_facts(&facts);
-    guard_enable(&guard_state, &guard_ops, &facts);
+    guard_apply(&guard_state, &guard_ops, &facts, setting_wanted);
+}
+
+static void log_storage_error(const char *what, WUPSStorageError status) {
+    OSReport("[HiddenCSS] %s failed: %s\n", what, WUPSStorageAPI_GetStatusStr(status));
+}
+
+static void store_setting(bool value) {
+    WUPSStorageError status = WUPSStorageAPI_StoreBool(NULL, SETTING_ENABLED_KEY, value);
+    if (status != WUPS_STORAGE_ERROR_SUCCESS) log_storage_error("Setting store", status);
+}
+
+static void save_settings(void) {
+    WUPSStorageError status = WUPSStorageAPI_SaveStorage(false);
+    if (status != WUPS_STORAGE_ERROR_SUCCESS) log_storage_error("Setting save", status);
+}
+
+/* A missing key stores the default. Any other read error leaves the setting OFF (fail closed). */
+static void load_setting(void) {
+    bool stored = false;
+    WUPSStorageError status = WUPSStorageAPI_GetBool(NULL, SETTING_ENABLED_KEY, &stored);
+    bool read_ok = status == WUPS_STORAGE_ERROR_SUCCESS || status == WUPS_STORAGE_ERROR_NOT_FOUND;
+    bool found = status == WUPS_STORAGE_ERROR_SUCCESS;
+    setting_wanted = guard_config_resolve(read_ok, found, stored);
+    if (status == WUPS_STORAGE_ERROR_NOT_FOUND) {
+        store_setting(GUARD_DEFAULT_ENABLED);
+        save_settings();
+    } else if (!read_ok) {
+        log_storage_error("Setting read", status);
+    }
+}
+
+static void on_setting_changed(ConfigItemBoolean *item, bool new_value) {
+    (void)item;
+    setting_wanted = new_value;
+    store_setting(new_value);
+}
+
+static WUPSConfigAPICallbackStatus on_menu_opened(WUPSConfigCategoryHandle root) {
+    WUPSConfigCategoryHandle settings;
+    WUPSConfigAPICreateCategoryOptionsV1 options = {.name = "Settings"};
+    if (WUPSConfigAPI_Category_Create(options, &settings) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+    if (WUPSConfigItemBoolean_AddToCategory(settings, SETTING_ENABLED_KEY, SETTING_LABEL, GUARD_DEFAULT_ENABLED,
+                                            setting_wanted, on_setting_changed) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+    if (WUPSConfigAPI_Category_AddCategory(root, settings) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+    }
+    return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
+}
+
+static void on_menu_closed(void) {
+    save_settings();
+    apply_setting();
+}
+
+/* Gets called once when the plugin is loaded. If the config API fails, the setting stays OFF. */
+INITIALIZE_PLUGIN() {
+    WUPSConfigAPIOptionsV1 options = {.name = "Hidden CSS respawn"};
+    if (WUPSConfigAPI_Init(options, on_menu_opened, on_menu_closed) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        OSReport("[HiddenCSS] Config API init failed: respawn hook stays off.\n");
+        return;
+    }
+    load_setting();
+}
+
+ON_APPLICATION_START() {
+    guard_disable(&guard_state, &guard_ops);
+    apply_setting();
 }
 
 ON_APPLICATION_ENDS() { guard_disable(&guard_state, &guard_ops); }
