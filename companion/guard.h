@@ -14,7 +14,7 @@
 
 /* Forms whose assignment-site guard is verified, as a bit per form ID (fighter DB field 6).
  * The hook writes only for set bits. Only form 58 (Giga Bowser) is set, because only its assignment
- * block (0x02E45708) has a signature. To enable 59, 60 or 61: add that site's verified words and a
+ * block (0x02E45708) has a signature. To enable 59, 60 or 61 (sites at 0x02E45730, 0x02E45758 and 0x02E45780, see docs/RESPAWN-COMPANION.md): add that site's verified words and a
  * separate check in main.c, then set the form's bit here, then update docs/RESPAWN-COMPANION.md. */
 #define GUARD_ENABLED_FORMS_MASK (UINT64_C(1) << 58)
 
