@@ -248,6 +248,8 @@ static inline guard_reason_t guard_apply(guard_state_t *st, const guard_ops_t *o
                                          const guard_facts_t *facts, bool wanted) {
     if (!wanted) {
         guard_disable(st, ops);
+        /* A failed removal was already logged by guard_disable: do not also report inactive. */
+        if (st->has_handle) return GUARD_REMOVE_FAILED;
         ops->log(GUARD_CONFIG_OFF);
         return GUARD_CONFIG_OFF;
     }

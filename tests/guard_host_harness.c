@@ -497,10 +497,10 @@ static void test_apply_off_removal_failure_keeps_handle(void) {
     CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_OK);
     log_count = 0u;
     fake_remove_ok = false;
-    CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
+    CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_REMOVE_FAILED);
     CHECK(traced("IAR"));
     CHECK(!st.enabled && st.has_handle && st.lib_ready);
-    CHECK(log_count == 2u && logged[0] == GUARD_REMOVE_FAILED && logged[1] == GUARD_CONFIG_OFF);
+    CHECK(logged_exactly(GUARD_REMOVE_FAILED));
     CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_STUCK);
     CHECK(traced("IAR"));
     CHECK(!st.enabled);
