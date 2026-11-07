@@ -191,7 +191,7 @@ Open questions:
 - The 58 win-after-KO question: does a win after a restore differ from a win without a KO (the H3 test)?
 - Probe 03: which fighter was at the win.
 - The stale test count (`docs/VALIDATION.md:35`, `:36`, `:45`; section 2, item 5) needs a later docs fix.
-- Not run in this pass: the private-dump run. It is not run, and no result from it is claimed.
+- Not run in this pass: any console run. The offline private-dump measurement is in section 12 and is the only result claimed from it.
 
 ## 12. Measured on the real US v304 resource table
 
@@ -204,6 +204,6 @@ Open questions:
 | littlemac | littlemacg | 3 / 3 | 0 / 0 | 5404 / 5964 |
 | lucario | lucariom | 6 / 6 | 3 / 3 | 7308 / 9100 |
 
-What this establishes: Giga Bowser and Giga Mac have no entry or results animation files of their own at all, and Wario-Man and Mega Lucario have only main, left-hand and right-hand packs (the partner packs of the base fighter, such as `*pt1`, `*sw1`, face, are absent). Skeleton sizes match the numbers in `docs/NATIVE-FINDINGS.md`. This supports the "missing victory animation" hypothesis and shows a redirect to the base form's packs would have to cope with different skeletons, so a blind copy is not safe.
+What this establishes: under the counted paths (`fighter/<name>/motion/bodyentry` and `bodyresult`) Giga Bowser and Giga Mac have no files, and Wario-Man and Mega Lucario have 3 entry and 3 result files each, fewer than their base fighters. The tool counts files only; it does not list pack names, so which packs are missing is not established. Skeleton sizes match the numbers in `docs/NATIVE-FINDINGS.md`. This supports the "missing victory animation" hypothesis and shows a redirect to the base form's packs would have to cope with different skeletons, so a blind copy is not safe.
 
 What it does not establish: which of these files the game opens on Results, or that a missing file is the softlock cause. That needs a console run (Aroma plugins and the forms do not run in Cemu; a base-game boot to the title screen works but does not exercise Results). No fallback is implemented.
