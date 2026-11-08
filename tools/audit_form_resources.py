@@ -4,6 +4,7 @@ Reads the user's own Smash 4 dump (game and update `content` folders). Prints co
 no game data is written anywhere. Usage: python tools/audit_form_resources.py GAME_CONTENT UPDATE_CONTENT
 """
 import json
+import struct
 import sys
 from pathlib import Path
 
@@ -30,11 +31,32 @@ def audit(entries):
     return {form: {'base': folder_summary(entries, base), 'form': folder_summary(entries, form)} for base, form in PAIRS}
 
 
+def input_problem(game, update):
+    """Return a one-line reason the two folders cannot hold a dump, or None when both look right."""
+    if not (Path(game) / 'ls').is_file():
+        return f"audit_form_resources: game folder has no 'ls' file: {game}"
+    if not (Path(update) / 'patch').is_dir():
+        return f"audit_form_resources: update folder has no 'patch' folder: {update}"
+    return None
+
+
+def audit_dump(game, update):
+    resource = Dump(game, update).resources.get('data')
+    if resource is None:
+        raise ValueError('update patch folder has no resource data file')
+    return audit((e.path, e.decompressed) for e in resource.entries if not e.directory)
+
+
 def main(argv):
     if len(argv) != 3:
         sys.exit(__doc__)
-    resource = Dump(argv[1], argv[2]).resources['data']
-    print(json.dumps(audit((e.path, e.decompressed) for e in resource.entries if not e.directory), indent=2))
+    problem = input_problem(argv[1], argv[2])
+    if problem:
+        sys.exit(problem)
+    try:
+        print(json.dumps(audit_dump(argv[1], argv[2]), indent=2))
+    except (OSError, ValueError, struct.error) as err:
+        sys.exit(f'audit_form_resources: cannot read the dump: {err}')
 
 
 if __name__ == '__main__':
