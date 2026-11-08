@@ -6,6 +6,7 @@ no game data is written anywhere. Usage: python tools/audit_form_resources.py GA
 import json
 import struct
 import sys
+import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -55,7 +56,7 @@ def main(argv):
         sys.exit(problem)
     try:
         print(json.dumps(audit_dump(argv[1], argv[2]), indent=2))
-    except (OSError, ValueError, struct.error) as err:
+    except (OSError, ValueError, struct.error, zlib.error) as err:
         sys.exit(f'audit_form_resources: cannot read the dump: {err}')
 
 
