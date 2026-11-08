@@ -103,6 +103,14 @@ static inline bool guard_may_read_entry(bool enabled, uint32_t entry, uint32_t r
     return enabled && guard_entry_ptr_ok(entry, range_lo, range_size);
 }
 
+/* True only on the first call per flag: lets the wrapper log the first rejected entry once, so an
+ * entry range that excludes real fighter entries is visible instead of a silently inert hook. */
+static inline bool guard_first_rejection(bool *seen) {
+    if (*seen) return false;
+    *seen = true;
+    return true;
+}
+
 /* The alternate to store for an entry of this kind. Equals current unless the form is enabled and
  * current is exactly that form's base, so a caller that writes only on a difference never writes otherwise. */
 static inline uint32_t guard_restored_alternate(uint32_t kind, uint32_t current) {

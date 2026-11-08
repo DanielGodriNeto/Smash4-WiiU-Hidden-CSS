@@ -38,11 +38,18 @@ static uint32_t entry_range_size;
 static FunctionPatcherStatus last_remove_status;
 /* Resolved plugin setting. Starts OFF, so nothing is enabled before the setting is read. */
 static bool setting_wanted = false;
+static bool rejection_logged = false;
 
 static uint32_t my_initialize_entry(void *entry) {
     /* Preserve the native r3 return even if callers treat this routine as void. */
     uint32_t result = real_initialize_entry(entry);
-    if (!guard_may_read_entry(guard_state.enabled, (uint32_t)(uintptr_t)entry, entry_range_lo, entry_range_size)) return result;
+    if (!guard_may_read_entry(guard_state.enabled, (uint32_t)(uintptr_t)entry, entry_range_lo, entry_range_size)) {
+        if (guard_state.enabled && guard_first_rejection(&rejection_logged)) {
+            OSReport("[HiddenCSS] First entry rejected by the range check (entry 0x%08X, range 0x%08X+0x%X): hook left idle for it.\n",
+                     (unsigned)(uintptr_t)entry, (unsigned)entry_range_lo, (unsigned)entry_range_size);
+        }
+        return result;
+    }
     volatile uint32_t *kind = (volatile uint32_t *)((uint8_t *)entry + 0x10);
     volatile uint32_t *alternate = (volatile uint32_t *)((uint8_t *)entry + 0x14);
     uint32_t kind_value = *kind;

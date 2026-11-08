@@ -155,6 +155,13 @@ static void test_combined_restore_changes_only_giga(void) {
 }
 
 /* ---- Reason texts ---- */
+static void test_first_rejection(void) {
+    bool seen = false;
+    CHECK(guard_first_rejection(&seen));
+    CHECK(!guard_first_rejection(&seen));
+    CHECK(!guard_first_rejection(&seen));
+}
+
 static void test_reason_texts(void) {
     for (int r = GUARD_OK; r <= GUARD_CONFIG_OFF; ++r) {
         const char *text = guard_reason_text((guard_reason_t)r);
@@ -548,6 +555,7 @@ int main(void) {
     test_may_read_entry();
     test_restored_alternate_never_writes_outside_giga();
     test_combined_restore_changes_only_giga();
+    test_first_rejection();
     test_reason_texts();
     test_preflight_each_reason();
     test_enable_success();
