@@ -148,7 +148,7 @@ typedef struct guard_ops {
 static inline const char *guard_reason_text(guard_reason_t reason) {
     switch (reason) {
     case GUARD_OK:
-        return "[HiddenCSS] Experimental hidden-form respawn hook active for US v304.\n";
+        return "[HiddenCSS] Experimental hidden-form respawn hook armed for US v304; entry range is checked on each call.\n";
     case GUARD_TITLE_MISMATCH:
         return "[HiddenCSS] US v304 respawn hook was not applied: title is not US v304.\n";
     case GUARD_EXECUTABLE_NOT_FOUND:
@@ -208,7 +208,8 @@ static inline guard_reason_t guard_enable(guard_state_t *st, const guard_ops_t *
     guard_reason_t reason;
     bool applied = false;
     if (st->enabled) return GUARD_OK;
-    if (st->has_handle) {
+    /* A patch left by an earlier failed removal is retried here before anything else. */
+    if (st->has_handle && !guard_release(st, ops)) {
         ops->log(GUARD_STUCK);
         return GUARD_STUCK;
     }

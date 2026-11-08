@@ -171,20 +171,28 @@ static void on_setting_changed(ConfigItemBoolean *item, bool new_value) {
     (void)item;
     setting_wanted = new_value;
     store_setting(new_value);
+    apply_setting();
+}
+
+static WUPSConfigAPICallbackStatus menu_build_failed(const char *step) {
+    OSReport("[HiddenCSS] Config menu build failed at %s: respawn setting not shown.\n", step);
+    return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
 }
 
 static WUPSConfigAPICallbackStatus on_menu_opened(WUPSConfigCategoryHandle root) {
     WUPSConfigCategoryHandle settings;
     WUPSConfigAPICreateCategoryOptionsV1 options = {.name = "Settings"};
     if (WUPSConfigAPI_Category_Create(options, &settings) != WUPSCONFIG_API_RESULT_SUCCESS) {
-        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+        return menu_build_failed("category create");
     }
+    /* Shows ON while a failed removal still holds the patch, so the menu never hides a live hook. */
+    bool shown = setting_wanted || guard_state.has_handle;
     if (WUPSConfigItemBoolean_AddToCategory(settings, SETTING_ENABLED_KEY, SETTING_LABEL, GUARD_DEFAULT_ENABLED,
-                                            setting_wanted, on_setting_changed) != WUPSCONFIG_API_RESULT_SUCCESS) {
-        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+                                            shown, on_setting_changed) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        return menu_build_failed("item add");
     }
     if (WUPSConfigAPI_Category_AddCategory(root, settings) != WUPSCONFIG_API_RESULT_SUCCESS) {
-        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
+        return menu_build_failed("category add");
     }
     return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
 }

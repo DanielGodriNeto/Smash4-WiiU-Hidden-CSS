@@ -162,7 +162,7 @@ static void test_reason_texts(void) {
         CHECK(text != NULL && strlen(text) > 0u && text[strlen(text) - 1u] == '\n');
     }
     CHECK(strcmp(guard_reason_text(GUARD_OK),
-                 "[HiddenCSS] Experimental hidden-form respawn hook active for US v304.\n") == 0);
+                 "[HiddenCSS] Experimental hidden-form respawn hook armed for US v304; entry range is checked on each call.\n") == 0);
     CHECK(strcmp(guard_reason_text(GUARD_CONFIG_OFF),
                  "[HiddenCSS] Respawn hook inactive: disabled in plugin settings.\n") == 0);
 }
@@ -367,14 +367,19 @@ static void test_remove_failure_then_stuck(void) {
 
     fake_applied = true;
     CHECK(guard_enable(&st, &fake_ops, &facts) == GUARD_STUCK);
-    CHECK(traced("IAR"));
+    CHECK(traced("IARR"));
     CHECK(log_count == 3u && logged[2] == GUARD_STUCK);
 
     fake_remove_ok = true;
+    CHECK(guard_enable(&st, &fake_ops, &facts) == GUARD_OK);
+    CHECK(traced("IARRRDIA"));
+    CHECK(st.enabled && st.has_handle && st.lib_ready);
+    CHECK(log_count == 4u && logged[3] == GUARD_OK);
+
     guard_disable(&st, &fake_ops);
-    CHECK(traced("IARRD"));
+    CHECK(traced("IARRRDIARD"));
     CHECK(!st.has_handle && !st.lib_ready && !st.enabled);
-    CHECK(remove_count == 2u);
+    CHECK(remove_count == 4u);
 }
 
 static void test_disable_after_success(void) {
@@ -502,11 +507,11 @@ static void test_apply_off_removal_failure_keeps_handle(void) {
     CHECK(!st.enabled && st.has_handle && st.lib_ready);
     CHECK(logged_exactly(GUARD_REMOVE_FAILED));
     CHECK(guard_apply(&st, &fake_ops, &facts, true) == GUARD_STUCK);
-    CHECK(traced("IAR"));
+    CHECK(traced("IARR"));
     CHECK(!st.enabled);
     fake_remove_ok = true;
     CHECK(guard_apply(&st, &fake_ops, &facts, false) == GUARD_CONFIG_OFF);
-    CHECK(traced("IARRD"));
+    CHECK(traced("IARRRD"));
     CHECK(!st.has_handle && !st.lib_ready && !st.enabled);
 }
 
