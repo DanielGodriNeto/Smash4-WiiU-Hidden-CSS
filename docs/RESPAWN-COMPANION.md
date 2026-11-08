@@ -48,3 +48,11 @@ Build from source with the pinned/current official WUPS and FunctionPatcher SDK 
 The generated `.wps` needs Aroma's WUPS support and the separately installed FunctionPatcherModule/WUMS prerequisites documented by the FunctionPatcher project. Do not install it alongside unknown engine-patching plugins. Back up the SD card, use the US v304 game only, and remove the plugin immediately after a hang or unexpected behavior.
 
 No binary plugin or Nintendo data is committed or included in the source ZIP.
+
+## Settings and persisted state
+
+The hook is **OFF by default** (`GUARD_DEFAULT_ENABLED` in `companion/guard.h`, experimental). Turn it on in the WUPS config menu: category "Settings", item "Enable respawn hook (experimental, US v304)". The value is stored under storage id `hidden_css_respawn`, key `enabled`. A missing key stores OFF. Any other read error, or a failed config API init, keeps the hook OFF. Toggling applies at once: OFF removes the patch and deinitializes FunctionPatcher, ON adds it, and the menu close re-applies the stored value. The plugin logs a `[HiddenCSS]` line for each outcome: armed (the entry range is still checked on each call, so the first rejected entry is logged once with its address and the range, and later ones are silent), inactive (disabled in settings), or failed (removal, storage, menu or config-init error). A failed removal is retried on the next toggle, on menu close and on the next ON, and the menu shows ON while the patch is still held. If removing the patch fails, only the failure is logged, never "inactive"; the leftover wrapper stays inert because the hook body is gated by the enabled flag.
+
+Default change (release note): earlier builds restored Giga Bowser after KO without any setting. This build defaults to OFF, so after updating, turn the item on in the WUPS menu to get the restore back. The OFF default is a maintainer decision and is not final.
+
+NOT verified: the real WUPS menu, that the stored value survives a reboot, dynamic patch removal on the console, the order of the value-changed and menu-closed callbacks, and the case where the menu is opened outside the game (the module is then absent, so the hook stays off until the game starts with the setting ON).

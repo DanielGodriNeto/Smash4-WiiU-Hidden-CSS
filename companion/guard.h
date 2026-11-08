@@ -18,6 +18,9 @@
  * separate check in main.c, then set the form's bit here, then update docs/RESPAWN-COMPANION.md. */
 #define GUARD_ENABLED_FORMS_MASK (UINT64_C(1) << 58)
 
+/* Default for the plugin setting when no value is stored. Default OFF, experimental. */
+#define GUARD_DEFAULT_ENABLED false
+
 /* Entry fields read by the hook: kind at +0x10 and alternate at +0x14, so the reads end at +0x18. */
 #define GUARD_ENTRY_SPAN UINT32_C(0x18)
 
@@ -45,6 +48,7 @@ typedef enum guard_reason {
     GUARD_PATCH_HANDLE_NULL,
     GUARD_REMOVE_FAILED,
     GUARD_STUCK,
+    GUARD_CONFIG_OFF,
 } guard_reason_t;
 
 static inline bool guard_title_allowed(uint64_t title_id) {
@@ -99,6 +103,14 @@ static inline bool guard_may_read_entry(bool enabled, uint32_t entry, uint32_t r
     return enabled && guard_entry_ptr_ok(entry, range_lo, range_size);
 }
 
+/* True only on the first call per flag: lets the wrapper log the first rejected entry once, so an
+ * entry range that excludes real fighter entries is visible instead of a silently inert hook. */
+static inline bool guard_first_rejection(bool *seen) {
+    if (*seen) return false;
+    *seen = true;
+    return true;
+}
+
 /* The alternate to store for an entry of this kind. Equals current unless the form is enabled and
  * current is exactly that form's base, so a caller that writes only on a difference never writes otherwise. */
 static inline uint32_t guard_restored_alternate(uint32_t kind, uint32_t current) {
@@ -144,7 +156,7 @@ typedef struct guard_ops {
 static inline const char *guard_reason_text(guard_reason_t reason) {
     switch (reason) {
     case GUARD_OK:
-        return "[HiddenCSS] Experimental hidden-form respawn hook active for US v304.\n";
+        return "[HiddenCSS] Experimental hidden-form respawn hook armed for US v304; entry range is checked on each call.\n";
     case GUARD_TITLE_MISMATCH:
         return "[HiddenCSS] US v304 respawn hook was not applied: title is not US v304.\n";
     case GUARD_EXECUTABLE_NOT_FOUND:
@@ -167,6 +179,8 @@ static inline const char *guard_reason_text(guard_reason_t reason) {
         return "[HiddenCSS] Hook removal failed.\n";
     case GUARD_STUCK:
         return "[HiddenCSS] Hook removal is pending; respawn hook stays disabled.\n";
+    case GUARD_CONFIG_OFF:
+        return "[HiddenCSS] Respawn hook inactive: disabled in plugin settings.\n";
     }
     return "[HiddenCSS] Unknown hook state.\n";
 }
@@ -202,7 +216,8 @@ static inline guard_reason_t guard_enable(guard_state_t *st, const guard_ops_t *
     guard_reason_t reason;
     bool applied = false;
     if (st->enabled) return GUARD_OK;
-    if (st->has_handle) {
+    /* A patch left by an earlier failed removal is retried here before anything else. */
+    if (st->has_handle && !guard_release(st, ops)) {
         ops->log(GUARD_STUCK);
         return GUARD_STUCK;
     }
@@ -226,6 +241,28 @@ static inline guard_reason_t guard_enable(guard_state_t *st, const guard_ops_t *
     st->enabled = true;
     ops->log(GUARD_OK);
     return GUARD_OK;
+}
+
+/* Resolves the stored plugin setting. Read error (any storage failure) fails closed to false.
+ * A missing key takes GUARD_DEFAULT_ENABLED. Otherwise the stored value is used. */
+static inline bool guard_config_resolve(bool read_ok, bool found, bool stored) {
+    if (!read_ok) return false;
+    if (!found) return GUARD_DEFAULT_ENABLED;
+    return stored;
+}
+
+/* Applies the resolved setting. wanted=false always tears down: the patch is removed before
+ * enabled is cleared, and a removal failure is kept and logged by guard_disable. */
+static inline guard_reason_t guard_apply(guard_state_t *st, const guard_ops_t *ops,
+                                         const guard_facts_t *facts, bool wanted) {
+    if (!wanted) {
+        guard_disable(st, ops);
+        /* A failed removal was already logged by guard_disable: do not also report inactive. */
+        if (st->has_handle) return GUARD_REMOVE_FAILED;
+        ops->log(GUARD_CONFIG_OFF);
+        return GUARD_CONFIG_OFF;
+    }
+    return guard_enable(st, ops, facts);
 }
 
 #endif

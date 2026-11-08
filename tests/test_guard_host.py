@@ -70,7 +70,7 @@ class GuardWiringTests(unittest.TestCase):
 
     def test_main_routes_every_write_through_gate(self):
         text = MAIN.read_text(encoding='utf-8')
-        for needle in ('#include "guard.h"', 'guard_enable(', 'guard_disable(', 'OSGetMapVirtAddrRange(',
+        for needle in ('#include "guard.h"', 'guard_apply(', 'guard_disable(', 'OSGetMapVirtAddrRange(',
                        'guard_may_read_entry(guard_state.enabled,', 'guard_restored_alternate(kind_value, current)'):
             self.assertIn(needle, text)
         self.assertNotIn('guard_state.enabled)', text.replace('guard_may_read_entry(guard_state.enabled,', ''))
