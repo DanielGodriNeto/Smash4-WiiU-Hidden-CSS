@@ -115,3 +115,16 @@ Each stage changes one variable. The maintainer runs every hardware or Cemu test
 External pages (all fetched 2026-11-04): the SmashWiki pages Boss, Master_Hand_(SSB4), Crazy_Hand_(SSB4), Master_Core and SmashWiki:Copyrights on https://www.ssbwiki.com (Fighter_number appears only as a search snippet); https://en.wikipedia.org/wiki/Master_Hand; https://en.wikipedia.org/wiki/Nintendo_Network; https://github.com/jam1garner/Smash-Forge and its wiki; https://github.com/Sammi-Husky/Sm4sh-Tools; https://github.com/NemesisSSBU/Playable_Bosses. The Sm4shExplorer and Smash4ModdingTests repositories were only skimmed earlier (front pages, no boss, CSS or stock data seen); that is unverified and not re-checked.
 
 Licence: SmashWiki text is CC BY-SA, so this file paraphrases it, links the source and quotes no more than a few words. Figures such as HP values are facts, listed with their source. Wikipedia text is also CC BY-SA. Repository front pages were used for capability statements only.
+
+## 12. Measured on the real US v304 resource table
+
+Counted from the user's own dump (resource table only, counts, no data copied). Master Hand and Crazy Hand are not under `fighter/`: none of the 67 fighter folders is a hand or core. They live in the `enemy` namespace.
+
+| entity | model files | motion files | animcmd files | effect files | other |
+|---|---|---|---|---|---|
+| masterhand | 34 | 3 | 3 | 2 | 42 total |
+| crazyhand | 25 | 3 | 3 | 38 | 69 total |
+| mastercore | 8 | 0 | 0 | 80 | 88 total, no motion or animcmd |
+
+The `enemy` namespace holds 70 entity folders in all under `model/enemy`, `param/enemy` and `animcmd/enemy`. This confirms the isolation statement above: the hands use the enemy asset layout, not the fighter layout the CSS and respawn work depend on. Nothing about spawning, camera, HUD, stocks or hooks is provable without running the game.
+

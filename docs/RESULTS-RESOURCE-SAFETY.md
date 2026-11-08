@@ -191,4 +191,19 @@ Open questions:
 - The 58 win-after-KO question: does a win after a restore differ from a win without a KO (the H3 test)?
 - Probe 03: which fighter was at the win.
 - The stale test count (`docs/VALIDATION.md:35`, `:36`, `:45`; section 2, item 5) needs a later docs fix.
-- Not run in this pass: the private-dump run. It is not run, and no result from it is claimed.
+- Not run in this pass: any console run. The offline private-dump measurement is in section 12 and is the only result claimed from it.
+
+## 12. Measured on the real US v304 resource table
+
+`python tools/audit_form_resources.py GAME_CONTENT UPDATE_CONTENT` reads the resource table of the user's own dump (game plus update 0005000E10144F00 v304) and prints counts only. Result, counting files under `fighter/<name>/motion/bodyentry` and `bodyresult`:
+
+| base | form | base entry / result files | form entry / result files | body skeleton sizes, base / form (bytes) |
+|---|---|---|---|---|
+| koopa | koopag | 5 / 6 | 0 / 0 | 8876 / 8204 |
+| wario | warioman | 5 / 6 | 3 / 3 | 12348 / 9548 |
+| littlemac | littlemacg | 3 / 3 | 0 / 0 | 5404 / 5964 |
+| lucario | lucariom | 6 / 6 | 3 / 3 | 7308 / 9100 |
+
+What this establishes: under the counted paths (`fighter/<name>/motion/bodyentry` and `bodyresult`) Giga Bowser and Giga Mac have no files, and Wario-Man and Mega Lucario have 3 entry and 3 result files each, fewer than their base fighters. The tool counts files only; it does not list pack names, so which packs are missing is not established. Skeleton sizes match the numbers in `docs/NATIVE-FINDINGS.md`. This supports the "missing victory animation" hypothesis and shows a redirect to the base form's packs would have to cope with different skeletons, so a blind copy is not safe.
+
+What it does not establish: which of these files the game opens on Results, or that a missing file is the softlock cause. That needs a console run (Aroma plugins and the forms do not run in Cemu; a base-game boot to the title screen works but does not exercise Results). No fallback is implemented.
