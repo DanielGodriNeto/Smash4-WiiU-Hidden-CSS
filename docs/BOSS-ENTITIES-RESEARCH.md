@@ -128,3 +128,49 @@ Counted from the user's own dump (resource table only, counts, no data copied). 
 
 The `enemy` namespace holds 70 entity folders in all under `model/enemy`, `param/enemy` and `animcmd/enemy`. This confirms the isolation statement above: the hands use the enemy asset layout, not the fighter layout the CSS and respawn work depend on. Nothing about spawning, camera, HUD, stocks or hooks is provable without running the game.
 
+
+## 13. Status and conclusion
+
+**Status: closed as a research pass, no feasibility established.** Nothing was built, spawned, loaded or run on a console or in Cemu. Playability of Master Hand, Crazy Hand and Master Core is **not confirmed** and is not claimed by this file.
+
+### 13.1 What was researched offline
+
+- Public wiki, encyclopedia and tool-repository pages, fetched 2026-11-04 (sections 3 and 11). Several rows are single-read (Medium) or search snippets (Low).
+- Repository read: README, docs, tools and companion code (section 4).
+- Counts only from the maintainer's US v304 resource table (section 12). No dump content, keys or firmware data are reproduced here.
+
+### 13.2 What the evidence supports
+
+- **Spawning:** no kind value for the Hands or the Core was found in any public source or in the repo. The only related statement is that boss character IDs were removed from Brawl onward (section 3, medium confidence). The repo excludes boss icons with fighter ID `0xFFFFFFFF` (README.md:21).
+- **Assets:** the Hands and the Core live in the `enemy` namespace, not `fighter/` (section 12). The Core has no motion or animcmd files in that table. Counts show the files exist; they say nothing about whether the game can use them.
+- **Repo:** no entry for any of the three entities exists anywhere in the repo (section 4; docs/NATIVE-FINDINGS.md:7 lists only cosmetics 201-204 and 219-221).
+- **Precedent:** Mii forms 62-64 show that enemy-type actors can sit in the fighter table (docs/MAINTAINER-GUIDE.md:62-63). Their runtime status is unknown.
+- **Lifecycle risk:** CSS loading passing does not show that KO, respawn or results work (docs/VALIDATION.md:12, 32; docs/NATIVE-FINDINGS.md:31-37). Any boss entry must clear the same gates as a fighter.
+
+### 13.3 What cannot be decided without a console
+
+- Whether any Hand or Core CSS entry loads without a boot, CSS or hang failure.
+- Whether a Training spawn of either Hand or the Core runs at all, and what the camera, HUD, HP and stock behaviour is.
+- Whether the Hands' motion and animcmd files work with the fighter lifecycle, or need a different path.
+- Whether the US v304 executable or parameter tables hold a usable kind value. Section 12 counts files only; no static search of the binary has been done.
+- The Master Core unlock threshold: the wiki says Intensity 5.1; unverified snippets say 7.0 or 8.0 (section 7). This is background, not a blocker.
+- Online behaviour: out of scope (section 10, stage 4).
+
+### 13.4 Ordered experiments for later (maintainer runs them)
+
+Each step changes one variable and stops at its abort condition. Rollback at every step: remove the experiment folder, confirm the baseline pack loads, then record the result in docs/VALIDATION.md only after the maintainer confirms it.
+
+0. **[No console needed]** re-fetch the Master Core threshold sources to settle the 5.1 vs 7.0/8.0 conflict. Abort: none; this only updates section 7.
+1. **[No console needed] Static, private dump, read-only (stage 0):** search the parameter and UI tables for kind values of Master Hand, Crazy Hand and Master Core. Abort and record "not feasible on this evidence" if none is found.
+2. **[No console needed] Asset check, read-only:** compare the Hands' and the Core's enemy-folder layout with the Mii 62-64 precedent. Record any missing file the game would need. Abort if a required file is absent.
+3. **[Needs Cemu or console] CSS display only (stage 1):** one Hand entry, no spawn, default-off flag. Abort on boot failure, a hang entering the CSS, or any change to the 82-row database diff.
+4. **[Needs Cemu or console] Training spawn of Master Hand alone (stage 2; "offline" in section 10 means offline game mode, not online play):** no results screen. Record crash, softlock, camera lock or HUD fault. Abort on any of them, or on any change to Giga Bowser or Bowser rows.
+5. **[Needs Cemu or console] Crazy Hand alone, then Master Core alone:** same checks as step 4, one entity per run. The Core is run last because it has the most unknowns.
+6. **[Needs Cemu or console] HP and stock probe in offline game mode (stage 3):** abort if Hand or Core state leaks into ordinary fighter matches.
+7. **Decision point:** if steps 1-6 do not pass, record "not playable on this build" and stop. Do not move to stage 4 (online) without a separate review.
+
+### 13.5 Risks and unverified items
+
+- Section 12 counts come from a private dump that is not in the repo, so they cannot be re-run here.
+- Several rows rely on single wiki reads or search snippets (section 3).
+- The smashboards thread (HTTP 403) and the six hidden Smash Forge wiki pages were not read (section 6).
