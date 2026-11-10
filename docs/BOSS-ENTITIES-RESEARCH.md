@@ -1,8 +1,8 @@
 # Boss entities research: Master Hand, Crazy Hand, Master Core
 
-Date: 2026-11-04. Tracks issue #8.
+Date: 2026-11-04; follow-up checklist added 2026-11-10. Tracks issue #8.
 
-**Status: research only, not planned, not validated on hardware or in Cemu, not part of the stable build.** This file is not a roadmap and does not commit the project to any work. Nothing described here has been run.
+**Status: research only, experimental TODO reopened at the user's request, not validated on hardware or in Cemu, and not part of the stable build.** The checklist in issue #8 is an investigation queue, not a feasibility claim or commitment to make any entry playable. Nothing described here has been run.
 
 ## 1. Summary and verdict
 
@@ -174,3 +174,14 @@ Each step changes one variable and stops at its abort condition. Rollback at eve
 - Section 12 counts come from a private dump that is not in the repo, so they cannot be re-run here.
 - Several rows rely on single wiki reads or search snippets (section 3).
 - The smashboards thread (HTTP 403) and the six hidden Smash Forge wiki pages were not read (section 6).
+
+## 14. User-requested experimental playability checklist
+
+Issue #8 was reopened on 2026-11-10 to track these candidates individually. This list is exploratory only; it does not imply that any candidate has a valid fighter entry or can be made playable. Keep each experiment isolated from Final Smash forms 58-61 and stop on instability.
+
+- Master Hand; Crazy Hand; Master Hand and Crazy Hand as a pair.
+- Fighting Mii Team Brawler, Swordfighter and Gunner, each tracked separately.
+- Master Core; Ridley; Yellow Devil; Sandbag; Bomb; Dr. Mario viruses; Smash Ball; Assist Trophy; Metal Face.
+- Two roster entries reported as `???`: identify their slot IDs and models before assigning names or testing them as a known fighter.
+
+For each candidate, establish identity from the maintainer's private US v304 data, test CSS selection and offline gameplay separately, and record the pack hash and exact observed outcome. Do not upload or commit game dumps, extracted game assets, or personal console data. See [docs/VALIDATION.md](VALIDATION.md) for the latest user-reported Wii U results; those reports are not completed regression-matrix runs.

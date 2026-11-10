@@ -65,3 +65,17 @@ Start with a clean US game and only this pack. Record game update, SDCafiine ver
 Known research limitations: Final Smash forms may freeze upon winning because standalone fighter results behavior is incomplete. Enemy Miis are multi-man actors, not full retail fighters. UI victory fallback does not repair gameplay code. Avoid saving/relying on replays until validated. Eight-player, Classic, All-Star, Tour, Orders, amiibo and network play are outside the supported test scope.
 
 If a case fails, disable the pack, restart and compare stock behavior. Do not assume a different icon or another enabled flag fixes the fighter module. A stable release requires actual runtime evidence and potentially engine/animation work beyond CSS parameters.
+
+## Latest user-reported console results (2026-11-10)
+
+The user tested the current Hidden CSS build on a Wii U. The exact pack/plugin hashes, game update, language and match settings were not recorded; these observations are reports, not a root-cause diagnosis:
+
+- The companion plugin's configuration page has no visible on/off button. The toggle was previously validated only at host/code level; console visibility is not verified. Reopened issue #5 and recorded hardware follow-up in #21.
+- The character-selection screen still has a visual defect. Names are blank or `???`, and added forms use base-character portraits. The supplied screenshot shows the CSS grid with Custom Fighters Off, but does not isolate a separate layout/rendering cause. Name/portrait tracking: #2; separate visual-defect investigation: #23.
+- Final Smash forms still T-pose, and respawning reportedly restores the base character. Which forms and exact runs are unknown. Tracking: #3 and #4.
+- Results reportedly take a long time to appear and show Mario. An eight-player match containing all four Final Smash forms and added Mii characters ended in buzzing audio at the Results transition. This does not establish whether the symptoms share a cause. Tracking: #4.
+- A new experimental checklist in issue #8 records the requested hidden-entity and extra-slot playability candidates. None is validated as playable.
+
+Do not treat these outcomes as passing cells in `docs/regression-matrix.json`: no hash-identified run records were supplied. Reproduce one candidate at a time, compare with stock behavior, and stop if a hang, softlock, or buzzing occurs.
+
+Documentation-change checks on this host: the source-only package privacy scan passed. `python -m unittest discover -s tests -v` attempted 114 tests; Windows App Control blocked two generated companion harness executables, and one sanitizer-dependent test was skipped. No Wii U build or hardware test was performed for this documentation-only update.
